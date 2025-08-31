@@ -18,7 +18,7 @@ public class PlanService {
     }
 
     public Plan create(Plan p) {
-        plans.findByCode(p.getCode()).ifPresent(x -> {
+        plans.findByPlanType(p.getPlanType().toString()).ifPresent(x -> {
             throw new BusinessException("Plan code already exists");
         });
         return plans.save(p);

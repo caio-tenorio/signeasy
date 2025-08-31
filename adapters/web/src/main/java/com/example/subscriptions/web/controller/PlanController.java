@@ -1,9 +1,11 @@
 package com.example.subscriptions.web.controller;
 
 import com.example.subscriptions.application.services.PlanService;
+import com.example.subscriptions.domain.common.Period;
 import com.example.subscriptions.domain.model.Plan;
 import com.example.subscriptions.web.dto.PlanDtos.CreatePlanRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,12 +22,13 @@ public class PlanController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     public Plan create(@RequestBody @Validated CreatePlanRequest req) {
         var p = new Plan();
-        p.setCode(req.code());
+        p.setPlanType(req.planType());
         p.setName(req.name());
         p.setPriceCents(req.priceCents());
-        p.setPeriod(req.period() == CreatePlanRequest.Period.MONTHLY ? Plan.Period.MONTHLY : Plan.Period.YEARLY);
+        p.setPeriod(req.period() == Period.MONTHLY ? Period.MONTHLY : Period.YEARLY);
         p.setTrialDays(req.trialDays());
         return plans.create(p);
     }

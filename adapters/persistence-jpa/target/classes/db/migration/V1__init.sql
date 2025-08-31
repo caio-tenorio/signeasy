@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS plans
     UUID
     PRIMARY
     KEY,
-    code
+    plan_type
     TEXT
     NOT
     NULL,
@@ -62,9 +62,9 @@ CREATE TABLE IF NOT EXISTS plans
     period TEXT NOT NULL,
     trial_days INT NOT NULL DEFAULT 0,
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    CONSTRAINT uk_plan_code UNIQUE
+    CONSTRAINT uk_plan_type UNIQUE
 (
-    code
+    plan_type
 )
     );
 

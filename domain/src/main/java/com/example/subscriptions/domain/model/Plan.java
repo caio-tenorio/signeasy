@@ -1,5 +1,7 @@
 package com.example.subscriptions.domain.model;
 
+import com.example.subscriptions.domain.common.Period;
+import com.example.subscriptions.domain.common.PlanType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -7,14 +9,15 @@ import jakarta.validation.constraints.NotBlank;
 import java.util.UUID;
 
 @Entity
-@Table(name = "plans", uniqueConstraints = @UniqueConstraint(name = "uk_plan_code", columnNames = "code"))
+@Table(name = "plans", uniqueConstraints = @UniqueConstraint(name = "uk_plan_type", columnNames = "type"))
 public class Plan {
     @Id
     @Column(nullable = false, updatable = false)
     private UUID id = UUID.randomUUID();
 
-    @NotBlank
-    private String code; // ex.: BASIC, PRO
+    @Enumerated(EnumType.STRING) // grava BASIC/PRO/ENTERPRISE no banco
+    @Column(nullable = false, unique = true)
+    private PlanType planType; // ex.: BASIC, PRO
 
     @NotBlank
     private String name;
@@ -32,8 +35,6 @@ public class Plan {
     @Column(nullable = false)
     private boolean active = true;
 
-    public enum Period {MONTHLY, YEARLY}
-
     // Getters/setters
     public UUID getId() {
         return id;
@@ -43,12 +44,12 @@ public class Plan {
         this.id = id;
     }
 
-    public String getCode() {
-        return code;
+    public PlanType getPlanType() {
+        return planType;
     }
 
-    public void setCode(String code) {
-        this.code = code;
+    public void setPlanType(PlanType type) {
+        this.planType = type;
     }
 
     public String getName() {

@@ -6,9 +6,9 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public class SubscriptionDtos {
-    public record SubscribeRequest(@NotNull UUID customerId, @NotBlank String planCode) {
+    public record SubscribeRequest(@NotNull UUID customerId, @NotBlank String planType) {
     }
 
-    public record ChangePlanRequest(@NotBlank String newPlanCode) {
+    public record ChangePlanRequest(@NotBlank String newPlanType) {
     }
 }
