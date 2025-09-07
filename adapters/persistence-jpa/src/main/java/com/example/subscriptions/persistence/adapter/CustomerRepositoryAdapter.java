@@ -1,7 +1,7 @@
 package com.example.subscriptions.persistence.adapter;
 
 import com.example.subscriptions.application.ports.CustomerRepositoryPort;
-import com.example.subscriptions.domain.model.Customer;
+import com.example.subscriptions.domain.model.customer.Customer;
 import com.example.subscriptions.persistence.jpa.CustomerJpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -25,5 +25,10 @@ public class CustomerRepositoryAdapter implements CustomerRepositoryPort {
 
     public Optional<Customer> findByEmail(String email) {
         return repo.findByEmail(email);
+    }
+
+    @Override
+    public Optional<Customer> findByIdAndTenantId(UUID id, String tenantId) {
+        return repo.findByKeyIdAndKeyTenantId(id, tenantId);
     }
 }

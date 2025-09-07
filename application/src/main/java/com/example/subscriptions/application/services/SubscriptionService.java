@@ -4,7 +4,8 @@ import com.example.subscriptions.application.ports.CustomerRepositoryPort;
 import com.example.subscriptions.application.ports.PlanRepositoryPort;
 import com.example.subscriptions.application.ports.SubscriptionRepositoryPort;
 import com.example.subscriptions.domain.common.BusinessException;
-import com.example.subscriptions.domain.model.Plan;
+import com.example.subscriptions.domain.common.Period;
+import com.example.subscriptions.domain.model.plan.Plan;
 import com.example.subscriptions.domain.model.Subscription;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,9 +26,9 @@ public class SubscriptionService {
         this.subs = subs;
     }
 
-    public Subscription subscribe(UUID customerId, String planCode) {
+    public Subscription subscribe(UUID customerId, String planType) {
         var customer = customers.findById(customerId).orElseThrow(() -> new BusinessException("Customer not found"));
-        var plan = plans.findByCode(planCode).orElseThrow(() -> new BusinessException("Plan not found"));
+        var plan = plans.findByPlanType(planType).orElseThrow(() -> new BusinessException("Plan not found"));
 
         var s = new Subscription();
         s.setCustomer(customer);
@@ -44,9 +45,9 @@ public class SubscriptionService {
         return subs.save(s);
     }
 
-    public Subscription changePlan(UUID subscriptionId, String newPlanCode) {
+    public Subscription changePlan(UUID subscriptionId, String planType) {
         var s = subs.findById(subscriptionId).orElseThrow(() -> new BusinessException("Subscription not found"));
-        var plan = plans.findByCode(newPlanCode).orElseThrow(() -> new BusinessException("Plan not found"));
+        var plan = plans.findByPlanType(planType).orElseThrow(() -> new BusinessException("Plan not found"));
         s.setPlan(plan);
         s.setNextBillingDate(nextBillingFrom(plan)); // simplificado
         return subs.save(s);
@@ -60,7 +61,7 @@ public class SubscriptionService {
     }
 
     private LocalDate nextBillingFrom(Plan plan) {
-        return LocalDate.now().plus(plan.getPeriod() == Plan.Period.MONTHLY ? java.time.Period.ofMonths(1)
+        return LocalDate.now().plus(plan.getPeriod() == Period.MONTHLY ? java.time.Period.ofMonths(1)
                 : java.time.Period.ofYears(1));
     }
 }

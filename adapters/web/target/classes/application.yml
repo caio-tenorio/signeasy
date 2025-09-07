@@ -10,6 +10,12 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8082/realms/saas
+          # Alternativa: jwk-set-uri: http://localhost:8082/realms/saas/protocol/openid-connect/certs
 
 server:
   port: 8080

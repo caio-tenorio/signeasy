@@ -1,43 +1,60 @@
 package com.example.subscriptions.domain.model;
 
+import com.example.subscriptions.domain.model.customer.Customer;
+import com.example.subscriptions.domain.model.plan.Plan;
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Entity
 @Table(name = "subscriptions")
 public class Subscription {
-    @Id
-    @Column(nullable = false, updatable = false)
-    private UUID id = UUID.randomUUID();
+    @EmbeddedId
+    private SubscriptionKey key = new SubscriptionKey();
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", nullable = false)
+    @JoinColumns({
+        @JoinColumn(name = "customer_id", referencedColumnName = "id", insertable = false, updatable = false),
+        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false)
+    })
     private Customer customer;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "plan_id", nullable = false)
+    @JoinColumns({
+        @JoinColumn(name = "plan_id", referencedColumnName = "id", insertable = false, updatable = false),
+        @JoinColumn(name = "tenant_id", referencedColumnName = "tenant_id", insertable = false, updatable = false)
+    })
     private Plan plan;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status = Status.IN_TRIAL;
 
-    private LocalDate startDate;       // quando começou
-    private LocalDate trialEndDate;    // se trial > 0
-    private LocalDate nextBillingDate; // próxima fatura
-    private LocalDate endDate;         // quando encerrou
+    private LocalDate startDate;
+    private LocalDate trialEndDate;
+    private LocalDate nextBillingDate;
+    private LocalDate endDate;
 
     public enum Status {IN_TRIAL, ACTIVE, SUSPENDED, CANCELED, EXPIRED}
 
-    // Getters/setters
-    public UUID getId() {
-        return id;
+    public Subscription() {}
+
+    public Subscription(SubscriptionKey key, Customer customer, Plan plan, Status status, LocalDate startDate, LocalDate trialEndDate, LocalDate nextBillingDate, LocalDate endDate) {
+        this.key = key;
+        this.customer = customer;
+        this.plan = plan;
+        this.status = status;
+        this.startDate = startDate;
+        this.trialEndDate = trialEndDate;
+        this.nextBillingDate = nextBillingDate;
+        this.endDate = endDate;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
+    public SubscriptionKey getKey() {
+        return key;
+    }
+
+    public void setKey(SubscriptionKey key) {
+        this.key = key;
     }
 
     public Customer getCustomer() {
@@ -46,6 +63,10 @@ public class Subscription {
 
     public void setCustomer(Customer customer) {
         this.customer = customer;
+        if (customer != null && key != null) {
+            key.setCustomerId(customer.getKey().getId());
+            key.setTenantId(customer.getKey().getTenantId());
+        }
     }
 
     public Plan getPlan() {
@@ -54,6 +75,9 @@ public class Subscription {
 
     public void setPlan(Plan plan) {
         this.plan = plan;
+        if (plan != null && key != null) {
+            key.setPlanId(plan.getKey().getId());
+        }
     }
 
     public Status getStatus() {

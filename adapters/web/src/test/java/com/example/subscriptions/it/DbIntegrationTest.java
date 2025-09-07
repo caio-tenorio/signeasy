@@ -1,5 +1,6 @@
 package com.example.subscriptions.it;
 
+import com.example.subscriptions.web.ApiApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -8,7 +9,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest
+@SpringBootTest(classes = ApiApplication.class)
 @Testcontainers
 class DbIntegrationTest {
     @Container
