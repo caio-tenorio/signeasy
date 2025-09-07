@@ -5,7 +5,7 @@ import com.example.subscriptions.application.ports.PlanRepositoryPort;
 import com.example.subscriptions.application.ports.SubscriptionRepositoryPort;
 import com.example.subscriptions.domain.common.BusinessException;
 import com.example.subscriptions.domain.common.Period;
-import com.example.subscriptions.domain.model.Plan;
+import com.example.subscriptions.domain.model.plan.Plan;
 import com.example.subscriptions.domain.model.Subscription;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

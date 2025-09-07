@@ -20,10 +20,10 @@ public class SubscriptionRepositoryAdapter implements SubscriptionRepositoryPort
     }
 
     public Optional<Subscription> findById(UUID id) {
-        return repo.findById(id);
+        return repo.findByKeyId(id);
     }
 
     public List<Subscription> findByCustomer(UUID customerId) {
-        return repo.findByCustomerId(customerId);
+        return repo.findByKeyCustomerId(customerId);
     }
 }

@@ -1,6 +1,6 @@
 package com.example.subscriptions.application.ports;
 
-import com.example.subscriptions.domain.model.Plan;
+import com.example.subscriptions.domain.model.plan.Plan;
 
 import java.util.List;
 import java.util.Optional;

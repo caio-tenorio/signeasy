@@ -1,18 +1,15 @@
-package com.example.subscriptions.domain.model;
+package com.example.subscriptions.domain.model.customer;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
-@Table(name = "customers", uniqueConstraints = @UniqueConstraint(name = "uk_customer_email", columnNames = "email"))
+@Table(name = "customers", uniqueConstraints = @UniqueConstraint(name = "uk_customer_email", columnNames = {"tenant_id", "email"}))
 public class Customer {
-    @Id
-    @Column(nullable = false, updatable = false)
-    private UUID id = UUID.randomUUID();
+    @EmbeddedId
+    private CustomerKey key;
 
     @NotBlank
     private String name;
@@ -25,10 +22,10 @@ public class Customer {
     @Column(nullable = false)
     private Status status = Status.ACTIVE;
 
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt = Instant.now();
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private final Instant createdAt = Instant.now();
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
 
     @PreUpdate
@@ -38,13 +35,21 @@ public class Customer {
 
     public enum Status {ACTIVE, SUSPENDED}
 
-    // Getters/setters
-    public UUID getId() {
-        return id;
+    public Customer() {}
+
+    public Customer(CustomerKey key, String name, String email, Status status) {
+        this.key = key;
+        this.name = name;
+        this.email = email;
+        this.status = status;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
+    public CustomerKey getKey() {
+        return key;
+    }
+
+    public void setKey(CustomerKey key) {
+        this.key = key;
     }
 
     public String getName() {
@@ -73,10 +78,6 @@ public class Customer {
 
     public Instant getCreatedAt() {
         return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
     }
 
     public Instant getUpdatedAt() {

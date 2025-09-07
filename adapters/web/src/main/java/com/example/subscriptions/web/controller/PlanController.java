@@ -2,7 +2,7 @@ package com.example.subscriptions.web.controller;
 
 import com.example.subscriptions.application.services.PlanService;
 import com.example.subscriptions.domain.common.Period;
-import com.example.subscriptions.domain.model.Plan;
+import com.example.subscriptions.domain.model.plan.Plan;
 import com.example.subscriptions.web.dto.PlanDtos.CreatePlanRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;

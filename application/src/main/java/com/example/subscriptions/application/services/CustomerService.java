@@ -2,11 +2,13 @@ package com.example.subscriptions.application.services;
 
 import com.example.subscriptions.application.ports.CustomerRepositoryPort;
 import com.example.subscriptions.domain.common.BusinessException;
-import com.example.subscriptions.domain.model.Customer;
+import com.example.subscriptions.domain.model.customer.Customer;
+import com.example.subscriptions.domain.model.customer.CustomerKey;
+import com.example.subscriptions.domain.model.customer.Customer.Status;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -26,5 +28,18 @@ public class CustomerService {
 
     public Customer findByEmail(String email) {
         return customers.findByEmail(email).orElseThrow(() -> new BusinessException("Customer with email " + email + " does not exist"));
+    }
+
+    public void provisionIfNotExists(String sub, String tenantId, String email, String name) {
+        UUID id = UUID.fromString(sub);
+        if (customers.findByIdAndTenantId(id, tenantId).isEmpty()) {
+            CustomerKey key = new CustomerKey(id, tenantId);
+            Customer customer = new Customer();
+            customer.setKey(key);
+            customer.setEmail(email);
+            customer.setName(name);
+            customer.setStatus(Status.ACTIVE);
+            customers.save(customer);
+        }
     }
 }

@@ -2,7 +2,7 @@ package com.example.subscriptions.persistence.adapter;
 
 import com.example.subscriptions.application.ports.PlanRepositoryPort;
 import com.example.subscriptions.domain.common.PlanType;
-import com.example.subscriptions.domain.model.Plan;
+import com.example.subscriptions.domain.model.plan.Plan;
 import com.example.subscriptions.persistence.jpa.PlanJpaRepository;
 import org.springframework.stereotype.Repository;
 

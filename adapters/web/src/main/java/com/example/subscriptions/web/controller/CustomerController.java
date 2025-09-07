@@ -1,7 +1,7 @@
 package com.example.subscriptions.web.controller;
 
 import com.example.subscriptions.application.services.CustomerService;
-import com.example.subscriptions.domain.model.Customer;
+import com.example.subscriptions.domain.model.customer.Customer;
 import com.example.subscriptions.web.dto.CustomerDtos;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerController {
-    private CustomerService customers;
+    private final CustomerService customers;
 
     public CustomerController(CustomerService customers) {this.customers = customers;}
 
