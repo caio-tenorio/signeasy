@@ -1,6 +1,0 @@
-/home/caio/Projects/signeasy/adapters/persistence-jpa/src/main/java/com/example/subscriptions/persistence/adapter/CustomerRepositoryAdapter.java
-/home/caio/Projects/signeasy/adapters/persistence-jpa/src/main/java/com/example/subscriptions/persistence/adapter/PlanRepositoryAdapter.java
-/home/caio/Projects/signeasy/adapters/persistence-jpa/src/main/java/com/example/subscriptions/persistence/adapter/SubscriptionRepositoryAdapter.java
-/home/caio/Projects/signeasy/adapters/persistence-jpa/src/main/java/com/example/subscriptions/persistence/jpa/CustomerJpaRepository.java
-/home/caio/Projects/signeasy/adapters/persistence-jpa/src/main/java/com/example/subscriptions/persistence/jpa/PlanJpaRepository.java
-/home/caio/Projects/signeasy/adapters/persistence-jpa/src/main/java/com/example/subscriptions/persistence/jpa/SubscriptionJpaRepository.java

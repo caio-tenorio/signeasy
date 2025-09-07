@@ -1,6 +1,0 @@
-com/example/subscriptions/persistence/adapter/PlanRepositoryAdapter.class
-com/example/subscriptions/persistence/jpa/SubscriptionJpaRepository.class
-com/example/subscriptions/persistence/adapter/SubscriptionRepositoryAdapter.class
-com/example/subscriptions/persistence/jpa/CustomerJpaRepository.class
-com/example/subscriptions/persistence/jpa/PlanJpaRepository.class
-com/example/subscriptions/persistence/adapter/CustomerRepositoryAdapter.class
