@@ -27,5 +27,6 @@ replay_pid*
 .vscode
 
 adapters/web/target
+adapters/persistence-jpa/target
 application/target
 domain/target
