@@ -3,6 +3,7 @@ package com.example.signeasy.web.controller;
 import com.example.signeasy.application.services.CustomerService;
 import com.example.signeasy.domain.model.customer.Customer;
 import com.example.signeasy.web.dto.CustomerDtos;
+import com.example.signeasy.web.security.TenantProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -12,8 +13,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/customers")
 public class CustomerController {
     private final CustomerService customers;
+    private final TenantProvider tenantProvider;
 
-    public CustomerController(CustomerService customers) {this.customers = customers;}
+    public CustomerController(CustomerService customers, TenantProvider tenantProvider) {
+        this.customers = customers;
+        this.tenantProvider = tenantProvider;
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -27,6 +32,6 @@ public class CustomerController {
 
     @GetMapping
     public Customer findByEmail(@RequestParam("email") String email) {
-        return customers.findByEmail(email);
+        return customers.findByEmailAndTenantId(email, tenantProvider.getCurrentTenantId());
     }
 }

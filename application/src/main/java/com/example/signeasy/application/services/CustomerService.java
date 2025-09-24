@@ -30,6 +30,10 @@ public class CustomerService {
         return customers.findByEmail(email).orElseThrow(() -> new BusinessException("Customer with email " + email + " does not exist"));
     }
 
+    public Customer findByEmailAndTenantId(String email, String tenantId) {
+        return customers.findByEmailAndTenantId(email, tenantId).orElseThrow(() -> new BusinessException("Customer with email " + email + " does not exist"));
+    }
+
     public void provisionIfNotExists(String sub, String tenantId, String email, String name) {
         UUID id = UUID.fromString(sub);
         if (customers.findByIdAndTenantId(id, tenantId).isEmpty()) {

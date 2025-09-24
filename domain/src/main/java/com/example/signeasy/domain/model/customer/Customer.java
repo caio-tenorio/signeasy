@@ -1,5 +1,6 @@
 package com.example.signeasy.domain.model.customer;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -23,9 +24,11 @@ public class Customer {
     private Status status = Status.ACTIVE;
 
     @Column(name = "created_at", nullable = false, updatable = false)
+    @JsonIgnore
     private final Instant createdAt = Instant.now();
 
     @Column(name = "updated_at", nullable = false)
+    @JsonIgnore
     private Instant updatedAt = Instant.now();
 
     @PreUpdate

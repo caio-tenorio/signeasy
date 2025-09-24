@@ -27,6 +27,10 @@ public class CustomerRepositoryAdapter implements CustomerRepositoryPort {
         return repo.findByEmail(email);
     }
 
+    public Optional<Customer> findByEmailAndTenantId(String email, String tenantId) {
+        return repo.findByEmailAndKeyTenantId(email, tenantId);
+    }
+
     @Override
     public Optional<Customer> findByIdAndTenantId(UUID id, String tenantId) {
         return repo.findByKeyIdAndKeyTenantId(id, tenantId);

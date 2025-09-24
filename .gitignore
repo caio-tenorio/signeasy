@@ -30,3 +30,4 @@ adapters/web/target
 adapters/persistence-jpa/target
 application/target
 domain/target
+logs
