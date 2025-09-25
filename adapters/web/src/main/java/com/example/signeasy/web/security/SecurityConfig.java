@@ -1,5 +1,6 @@
 package com.example.signeasy.web.security;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -10,6 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,7 +24,7 @@ import java.util.stream.Stream;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, TenantContextFilter tenantContextFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
@@ -36,7 +38,16 @@ public class SecurityConfig {
                 )
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter())));
 
+        http.addFilterAfter(tenantContextFilter, BearerTokenAuthenticationFilter.class);
+
         return http.build();
+    }
+
+    @Bean
+    public FilterRegistrationBean<TenantContextFilter> disableTenantContextFilterRegistration(TenantContextFilter filter) {
+        FilterRegistrationBean<TenantContextFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     /**
