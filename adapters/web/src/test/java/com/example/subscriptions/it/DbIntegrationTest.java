@@ -1,6 +1,6 @@
 package com.example.subscriptions.it;
 
-import com.example.subscriptions.web.ApiApplication;
+import com.example.signeasy.web.ApiApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
