@@ -3,6 +3,7 @@ package com.example.signeasy.application.services;
 import com.example.signeasy.application.ports.CustomerRepositoryPort;
 import com.example.signeasy.application.ports.PlanRepositoryPort;
 import com.example.signeasy.application.ports.SubscriptionRepositoryPort;
+import com.example.signeasy.application.ports.TenantContext;
 import com.example.signeasy.domain.common.BusinessException;
 import com.example.signeasy.domain.common.Period;
 import com.example.signeasy.domain.model.plan.Plan;
@@ -16,48 +17,58 @@ import java.util.UUID;
 @Service
 @Transactional
 public class SubscriptionService {
-    private final CustomerRepositoryPort customers;
-    private final PlanRepositoryPort plans;
-    private final SubscriptionRepositoryPort subs;
+    private final CustomerRepositoryPort customerRepositoryPort;
+    private final PlanRepositoryPort planRepositoryPort;
+    private final SubscriptionRepositoryPort subscriptionRepositoryPort;
+    private final TenantContext tenantContext;
 
-    public SubscriptionService(CustomerRepositoryPort customers, PlanRepositoryPort plans, SubscriptionRepositoryPort subs) {
-        this.customers = customers;
-        this.plans = plans;
-        this.subs = subs;
+    public SubscriptionService(CustomerRepositoryPort customerRepositoryPort,
+                               PlanRepositoryPort planRepositoryPort,
+                               SubscriptionRepositoryPort subscriptionRepositoryPort,
+                               TenantContext tenantContext) {
+        this.customerRepositoryPort = customerRepositoryPort;
+        this.planRepositoryPort = planRepositoryPort;
+        this.subscriptionRepositoryPort = subscriptionRepositoryPort;
+        this.tenantContext = tenantContext;
     }
 
     public Subscription subscribe(UUID customerId, String planType) {
-        var customer = customers.findById(customerId).orElseThrow(() -> new BusinessException("Customer not found"));
-        var plan = plans.findByPlanType(planType).orElseThrow(() -> new BusinessException("Plan not found"));
+        final String tenantId = tenantContext.currentTenantId();
 
-        var s = new Subscription();
-        s.setCustomer(customer);
-        s.setPlan(plan);
-        s.setStartDate(LocalDate.now());
+        var customer = customerRepositoryPort.findByIdAndTenantId(customerId, tenantId)
+                .orElseThrow(() -> new BusinessException("Customer not found"));
+        var plan = planRepositoryPort.findByPlanTypeAndTenantId(planType, tenantId).orElseThrow(() -> new BusinessException("Plan not found"));
+
+        var subscription = new Subscription();
+        subscription.setCustomer(customer);
+        subscription.setPlan(plan);
+        subscription.setStartDate(LocalDate.now());
         if (plan.getTrialDays() > 0) {
-            s.setStatus(Subscription.Status.IN_TRIAL);
-            s.setTrialEndDate(LocalDate.now().plusDays(plan.getTrialDays()));
-            s.setNextBillingDate(s.getTrialEndDate());
+            subscription.setStatus(Subscription.Status.IN_TRIAL);
+            subscription.setTrialEndDate(LocalDate.now().plusDays(plan.getTrialDays()));
+            subscription.setNextBillingDate(subscription.getTrialEndDate());
         } else {
-            s.setStatus(Subscription.Status.ACTIVE);
-            s.setNextBillingDate(nextBillingFrom(plan));
+            subscription.setStatus(Subscription.Status.ACTIVE);
+            subscription.setNextBillingDate(nextBillingFrom(plan));
         }
-        return subs.save(s);
+        return subscriptionRepositoryPort.save(subscription);
     }
 
     public Subscription changePlan(UUID subscriptionId, String planType) {
-        var s = subs.findById(subscriptionId).orElseThrow(() -> new BusinessException("Subscription not found"));
-        var plan = plans.findByPlanType(planType).orElseThrow(() -> new BusinessException("Plan not found"));
-        s.setPlan(plan);
-        s.setNextBillingDate(nextBillingFrom(plan)); // simplificado
-        return subs.save(s);
+        final String tenantId = tenantContext.currentTenantId();
+
+        var subscription = subscriptionRepositoryPort.findByIdAndTenantId(subscriptionId, tenantId).orElseThrow(() -> new BusinessException("Subscription not found"));
+        var plan = planRepositoryPort.findByPlanTypeAndTenantId(planType, tenantId).orElseThrow(() -> new BusinessException("Plan not found"));
+        subscription.setPlan(plan);
+        subscription.setNextBillingDate(nextBillingFrom(plan));
+        return subscriptionRepositoryPort.save(subscription);
     }
 
     public Subscription cancel(UUID subscriptionId) {
-        var s = subs.findById(subscriptionId).orElseThrow(() -> new BusinessException("Subscription not found"));
+        var s = subscriptionRepositoryPort.findByIdAndTenantId(subscriptionId, tenantContext.currentTenantId()).orElseThrow(() -> new BusinessException("Subscription not found"));
         s.setStatus(Subscription.Status.CANCELED);
         s.setEndDate(LocalDate.now());
-        return subs.save(s);
+        return subscriptionRepositoryPort.save(s);
     }
 
     private LocalDate nextBillingFrom(Plan plan) {

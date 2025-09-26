@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.*;
 
 public interface PlanJpaRepository extends JpaRepository<Plan, UUID> {
-    Optional<Plan> findByPlanType(PlanType planType);
+    Optional<Plan> findByPlanTypeAndKeyTenantId(PlanType planType, String tenantId);
 
-    List<Plan> findByActiveTrue();
+    List<Plan> findByActiveTrueAndKeyTenantId(String tenantId);
 }

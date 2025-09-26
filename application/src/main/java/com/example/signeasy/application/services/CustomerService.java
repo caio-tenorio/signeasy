@@ -23,22 +23,13 @@ public class CustomerService {
     }
 
     public Customer create(Customer c) {
-        customerRepositoryPort.findByEmail(c.getEmail()).ifPresent(x -> {
+        customerRepositoryPort.findByEmailAndTenantId(c.getEmail(), tenantContext.currentTenantId()).ifPresent(x -> {
             throw new BusinessException("A Customer with the same email already exists");
         });
         return customerRepositoryPort.save(c);
     }
 
     public Customer findByEmail(String email) {
-        return customerRepositoryPort.findByEmail(email).orElseThrow(() -> new BusinessException("Customer with email " + email + " does not exist"));
-    }
-
-    public Customer findByEmailAndTenantId(String email, String tenantId) {
-        return customerRepositoryPort.findByEmailAndTenantId(email, tenantId)
-                .orElseThrow(() -> new BusinessException("Customer with email " + email + " does not exist"));
-    }
-
-    public Customer findCurrentTenantByEmail(String email) {
         return findByEmailAndTenantId(email, tenantContext.currentTenantId());
     }
 
@@ -53,5 +44,10 @@ public class CustomerService {
             customer.setStatus(Status.ACTIVE);
             customerRepositoryPort.save(customer);
         }
+    }
+
+    private Customer findByEmailAndTenantId(String email, String tenantId) {
+        return customerRepositoryPort.findByEmailAndTenantId(email, tenantId)
+                .orElseThrow(() -> new BusinessException("Customer with email " + email + " does not exist"));
     }
 }

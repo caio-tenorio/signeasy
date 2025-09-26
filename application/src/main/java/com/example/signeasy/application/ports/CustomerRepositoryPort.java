@@ -7,8 +7,6 @@ import java.util.UUID;
 
 public interface CustomerRepositoryPort {
     Customer save(Customer c);
-    Optional<Customer> findById(UUID id);
-    Optional<Customer> findByEmail(String email);
-    Optional<Customer> findByEmailAndTenantId(String email, String tenantId);
     Optional<Customer> findByIdAndTenantId(UUID id, String tenantId);
+    Optional<Customer> findByEmailAndTenantId(String email, String tenantId);
 }

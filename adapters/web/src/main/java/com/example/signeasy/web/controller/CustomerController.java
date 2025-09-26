@@ -29,6 +29,6 @@ public class CustomerController {
 
     @GetMapping
     public Customer findByEmail(@RequestParam("email") String email) {
-        return customerService.findCurrentTenantByEmail(email);
+        return customerService.findByEmail(email);
     }
 }

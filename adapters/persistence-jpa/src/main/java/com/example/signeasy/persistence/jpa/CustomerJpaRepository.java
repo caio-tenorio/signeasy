@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CustomerJpaRepository extends JpaRepository<Customer, UUID> {
-    Optional<Customer> findByEmail(String email);
     Optional<Customer> findByEmailAndKeyTenantId(String email, String tenantId);
     Optional<Customer> findByKeyIdAndKeyTenantId(UUID id, String tenantId);
 }

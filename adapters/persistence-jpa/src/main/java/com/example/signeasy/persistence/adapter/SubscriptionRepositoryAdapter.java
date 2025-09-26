@@ -19,11 +19,8 @@ public class SubscriptionRepositoryAdapter implements SubscriptionRepositoryPort
         return repo.save(s);
     }
 
-    public Optional<Subscription> findById(UUID id) {
-        return repo.findByKeyId(id);
-    }
-
-    public List<Subscription> findByCustomer(UUID customerId) {
-        return repo.findByKeyCustomerId(customerId);
+    @Override
+    public Optional<Subscription> findByIdAndTenantId(UUID id, String tenantId) {
+        return repo.findByKeyCustomerIdAndKeyTenantId(id, tenantId);
     }
 }

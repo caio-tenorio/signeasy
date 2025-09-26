@@ -20,15 +20,12 @@ public class PlanRepositoryAdapter implements PlanRepositoryPort {
         return repo.save(p);
     }
 
-    public Optional<Plan> findByPlanType(String planType) {
-        return repo.findByPlanType(PlanType.valueOf(planType));
+    public Optional<Plan> findByPlanTypeAndTenantId(String planType, String tenantId) {
+        return repo.findByPlanTypeAndKeyTenantId(PlanType.valueOf(planType), tenantId);
     }
 
-    public Optional<Plan> findById(UUID id) {
-        return repo.findById(id);
-    }
-
-    public List<Plan> listActive() {
-        return repo.findByActiveTrue();
+    @Override
+    public List<Plan> listActivePlansByTenantId(String tenantId) {
+        return repo.findByActiveTrueAndKeyTenantId(tenantId);
     }
 }
