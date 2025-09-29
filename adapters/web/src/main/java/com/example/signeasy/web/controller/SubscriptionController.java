@@ -11,24 +11,24 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/subscriptions")
 public class SubscriptionController {
-    private final SubscriptionService subs;
+    private final SubscriptionService subscriptionService;
 
-    public SubscriptionController(SubscriptionService subs) {
-        this.subs = subs;
+    public SubscriptionController(SubscriptionService subscriptionService) {
+        this.subscriptionService = subscriptionService;
     }
 
     @PostMapping
     public Subscription subscribe(@RequestBody @Valid SubscribeRequest req) {
-        return subs.subscribe(req.customerId(), req.planType());
+        return subscriptionService.subscribe(req.customerId(), req.planType());
     }
 
     @PostMapping("/{id}/change-plan")
     public Subscription changePlan(@PathVariable UUID id, @RequestBody @Valid ChangePlanRequest req) {
-        return subs.changePlan(id, req.newPlanType());
+        return subscriptionService.changePlan(id, req.newPlanType());
     }
 
     @PostMapping("/{id}/cancel")
     public Subscription cancel(@PathVariable UUID id) {
-        return subs.cancel(id);
+        return subscriptionService.cancel(id);
     }
 }

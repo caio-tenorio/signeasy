@@ -99,4 +99,11 @@ public class Plan {
     public void setActive(boolean active) {
         this.active = active;
     }
+
+    public void setTenantId(String tenantId) {
+        if (this.key == null) {
+            this.key = new PlanKey();
+        }
+        this.key.setTenantId(tenantId);
+    }
 }

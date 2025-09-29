@@ -19,14 +19,6 @@ public class CustomerRepositoryAdapter implements CustomerRepositoryPort {
         return repo.save(c);
     }
 
-    public Optional<Customer> findById(UUID id) {
-        return repo.findById(id);
-    }
-
-    public Optional<Customer> findByEmail(String email) {
-        return repo.findByEmail(email);
-    }
-
     public Optional<Customer> findByEmailAndTenantId(String email, String tenantId) {
         return repo.findByEmailAndKeyTenantId(email, tenantId);
     }

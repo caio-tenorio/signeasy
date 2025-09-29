@@ -9,9 +9,7 @@ import java.util.UUID;
 public interface PlanRepositoryPort {
     Plan save(Plan p);
 
-    Optional<Plan> findByPlanType(String planType);
+    Optional<Plan> findByPlanTypeAndTenantId(String planType, String tenantId);
 
-    Optional<Plan> findById(UUID id);
-
-    List<Plan> listActive();
+    List<Plan> listActivePlansByTenantId(String tenantId);
 }

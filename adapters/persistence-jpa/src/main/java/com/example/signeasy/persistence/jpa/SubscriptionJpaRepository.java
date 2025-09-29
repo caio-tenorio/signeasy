@@ -9,6 +9,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface SubscriptionJpaRepository extends JpaRepository<Subscription, SubscriptionKey> {
-    List<Subscription> findByKeyCustomerId(UUID customerId);
-    Optional<Subscription> findByKeyId(UUID id);
+    Optional<Subscription> findByKeyCustomerIdAndKeyTenantId(UUID customerId, String tenantId);
 }

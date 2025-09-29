@@ -50,11 +50,6 @@ public class SecurityConfig {
         return registration;
     }
 
-    /**
-     * Converte roles do Keycloak em authorities do Spring:
-     * - realm_access.roles -> ROLE_*
-     * - resource_access.<clientId>.roles -> ROLE_*
-     */
     @Bean
     public JwtAuthenticationConverter jwtAuthConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
@@ -63,7 +58,6 @@ public class SecurityConfig {
     }
 
     private Collection<GrantedAuthority> extractAuthorities(Jwt jwt) {
-        // 1) Roles no realm (realm_access.roles)
         Map<String, Object> realmAccess = jwt.getClaim("realm_access");
         List<String> realmRoles = new ArrayList<>();
         if (realmAccess != null) {
@@ -75,7 +69,6 @@ public class SecurityConfig {
             }
         }
 
-        // 2) Roles no client (resource_access.<clientId>.roles)
         String clientId = "subscriptions-api"; // ajuste aqui para o seu Client ID no Keycloak
         Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
 
@@ -94,7 +87,6 @@ public class SecurityConfig {
             }
         }
 
-        // 3) Junta e mapeia para ROLE_*
         Stream<String> allRolesStream = Stream.concat(realmRoles.stream(), clientRoles.stream()).distinct();
 
         List<GrantedAuthority> authorities = new ArrayList<>();

@@ -8,8 +8,5 @@ import java.util.UUID;
 
 public interface SubscriptionRepositoryPort {
     Subscription save(Subscription s);
-
-    Optional<Subscription> findById(UUID id);
-
-    List<Subscription> findByCustomer(UUID customerId);
+    Optional<Subscription> findByIdAndTenantId(UUID id, String tenantId);
 }
