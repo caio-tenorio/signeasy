@@ -31,3 +31,10 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger
+
+app:
+  security:
+    jwt:
+      provider: keycloak # Pode ser 'keycloak' ou 'standard'
+      keycloak:
+        client-id: subscriptions-api
