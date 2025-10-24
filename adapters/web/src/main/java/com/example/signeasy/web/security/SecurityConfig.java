@@ -6,22 +6,21 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    private final JwtAuthoritiesExtractor authoritiesExtractor;
+
+    public SecurityConfig(JwtAuthoritiesExtractor authoritiesExtractor) {
+        this.authoritiesExtractor = authoritiesExtractor;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, TenantContextFilter tenantContextFilter) throws Exception {
@@ -53,44 +52,7 @@ public class SecurityConfig {
     @Bean
     public JwtAuthenticationConverter jwtAuthConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(this::extractAuthorities);
+        converter.setJwtGrantedAuthoritiesConverter(this.authoritiesExtractor::extractAuthorities);
         return converter;
-    }
-
-    private Collection<GrantedAuthority> extractAuthorities(Jwt jwt) {
-        Map<String, Object> realmAccess = jwt.getClaim("realm_access");
-        List<String> realmRoles = new ArrayList<>();
-        if (realmAccess != null) {
-            Object rolesObj = realmAccess.getOrDefault("roles", List.of());
-            if (rolesObj instanceof List) {
-                @SuppressWarnings("unchecked")
-                List<String> roles = (List<String>) rolesObj;
-                realmRoles = roles;
-            }
-        }
-
-        String clientId = "subscriptions-api"; // ajuste aqui para o seu Client ID no Keycloak
-        Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
-
-        List<String> clientRoles = new ArrayList<>();
-        if (resourceAccess != null) {
-            Object clientSectionObj = resourceAccess.get(clientId);
-            if (clientSectionObj instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> clientSection = (Map<String, Object>) clientSectionObj;
-                Object clientRolesObj = clientSection.getOrDefault("roles", List.of());
-                if (clientRolesObj instanceof List) {
-                    @SuppressWarnings("unchecked")
-                    List<String> roles = (List<String>) clientRolesObj;
-                    clientRoles = roles;
-                }
-            }
-        }
-
-        Stream<String> allRolesStream = Stream.concat(realmRoles.stream(), clientRoles.stream()).distinct();
-
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        allRolesStream.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role)));
-        return authorities;
     }
 }
