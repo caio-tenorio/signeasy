@@ -23,7 +23,15 @@ public class CustomerService {
     }
 
     public Customer create(Customer c) {
-        customerRepositoryPort.findByEmailAndTenantId(c.getEmail(), tenantContext.currentTenantId()).ifPresent(x -> {
+        String tenantId = tenantContext.currentTenantId();
+        if (c.getKey() == null) {
+            c.setKey(new CustomerKey());
+        }
+        c.getKey().setTenantId(tenantId);
+        if (c.getKey().getId() == null) {
+            c.getKey().setId(UUID.randomUUID());
+        }
+        customerRepositoryPort.findByEmailAndTenantId(c.getEmail(), tenantId).ifPresent(x -> {
             throw new BusinessException("A Customer with the same email already exists");
         });
         return customerRepositoryPort.save(c);

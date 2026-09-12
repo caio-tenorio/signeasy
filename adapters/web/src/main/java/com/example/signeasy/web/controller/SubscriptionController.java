@@ -19,16 +19,16 @@ public class SubscriptionController {
 
     @PostMapping
     public Subscription subscribe(@RequestBody @Valid SubscribeRequest req) {
-        return subscriptionService.subscribe(req.customerId(), req.planType());
+        return subscriptionService.subscribe(req.customerId(), req.planType(), req.period());
     }
 
     @PostMapping("/{id}/change-plan")
-    public Subscription changePlan(@PathVariable UUID id, @RequestBody @Valid ChangePlanRequest req) {
-        return subscriptionService.changePlan(id, req.newPlanType());
+    public Subscription changePlan(@PathVariable("id") UUID id, @RequestBody @Valid ChangePlanRequest req) {
+        return subscriptionService.changePlan(id, req.newPlanType(), req.newPeriod());
     }
 
     @PostMapping("/{id}/cancel")
-    public Subscription cancel(@PathVariable UUID id) {
+    public Subscription cancel(@PathVariable("id") UUID id) {
         return subscriptionService.cancel(id);
     }
 }

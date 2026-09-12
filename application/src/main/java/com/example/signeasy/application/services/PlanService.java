@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -22,6 +23,9 @@ public class PlanService {
 
     public Plan create(Plan plan) {
         plan.setTenantId(tenantContext.currentTenantId());
+        if (plan.getKey().getId() == null) {
+            plan.getKey().setId(UUID.randomUUID());
+        }
         planRepositoryPort.findByPlanTypeAndTenantId(plan.getPlanType().toString(), plan.getKey().getTenantId()).ifPresent(x -> {
             throw new BusinessException("Plan code already exists");
         });

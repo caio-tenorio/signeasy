@@ -3,9 +3,9 @@ package com.example.signeasy.application.services;
 import com.example.signeasy.application.ports.PlanRepositoryPort;
 import com.example.signeasy.application.ports.TenantContext;
 import com.example.signeasy.domain.common.BusinessException;
-import com.example.signeasy.domain.common.Period;
 import com.example.signeasy.domain.common.PlanType;
 import com.example.signeasy.domain.model.plan.Plan;
+import com.example.signeasy.domain.model.plan.PlanKey;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -32,12 +33,67 @@ class PlanServiceTest {
     private final String tenantId = "tenant-plan";
 
     @Test
+    void createWithoutKeyPersistsCompleteKey() {
+        Plan input = new Plan();
+        input.setPlanType(PlanType.BASIC);
+        when(tenantContext.currentTenantId()).thenReturn(tenantId);
+        when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.BASIC.name(), tenantId)).thenReturn(Optional.empty());
+        when(planRepositoryPort.save(input)).thenAnswer(invocation -> {
+            Plan saved = invocation.getArgument(0);
+            assertNotNull(saved.getKey().getId());
+            assertEquals(4, saved.getKey().getId().version());
+            assertEquals(tenantId, saved.getKey().getTenantId());
+            return saved;
+        });
+
+        assertSame(input, planService.create(input));
+        verify(planRepositoryPort).save(input);
+    }
+
+    @Test
+    void createWithIncompleteKeyPersistsCompleteKey() {
+        Plan input = new Plan();
+        input.setPlanType(PlanType.BASIC);
+        input.setKey(new PlanKey(null, "other-tenant"));
+        when(tenantContext.currentTenantId()).thenReturn(tenantId);
+        when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.BASIC.name(), tenantId)).thenReturn(Optional.empty());
+        when(planRepositoryPort.save(input)).thenAnswer(invocation -> {
+            Plan saved = invocation.getArgument(0);
+            assertNotNull(saved.getKey().getId());
+            assertEquals(4, saved.getKey().getId().version());
+            assertEquals(tenantId, saved.getKey().getTenantId());
+            return saved;
+        });
+
+        assertSame(input, planService.create(input));
+        verify(planRepositoryPort).save(input);
+    }
+
+    @Test
+    void createWithExistingIdPersistsCompleteKey() {
+        UUID existingId = UUID.randomUUID();
+        Plan input = new Plan();
+        input.setPlanType(PlanType.BASIC);
+        input.setKey(new PlanKey(existingId, "other-tenant"));
+        when(tenantContext.currentTenantId()).thenReturn(tenantId);
+        when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.BASIC.name(), tenantId)).thenReturn(Optional.empty());
+        when(planRepositoryPort.save(input)).thenAnswer(invocation -> {
+            Plan saved = invocation.getArgument(0);
+            assertNotNull(saved.getKey().getId());
+            assertEquals(existingId, saved.getKey().getId());
+            assertEquals(tenantId, saved.getKey().getTenantId());
+            return saved;
+        });
+
+        assertSame(input, planService.create(input));
+        verify(planRepositoryPort).save(input);
+    }
+
+    @Test
     void createSetsTenantAndPersistsWhenUnique() {
         Plan plan = new Plan();
         plan.setPlanType(PlanType.BASIC);
         plan.setName("Basic Plan");
-        plan.setPriceCents(9900);
-        plan.setPeriod(Period.MONTHLY);
         plan.setTrialDays(7);
 
         when(tenantContext.currentTenantId()).thenReturn(tenantId);

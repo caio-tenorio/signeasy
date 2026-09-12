@@ -1,7 +1,7 @@
 package com.example.signeasy.application.services;
 
 import com.example.signeasy.application.ports.CustomerRepositoryPort;
-import com.example.signeasy.application.ports.PlanRepositoryPort;
+import com.example.signeasy.application.ports.PlanPriceRepositoryPort;
 import com.example.signeasy.application.ports.SubscriptionRepositoryPort;
 import com.example.signeasy.application.ports.TenantContext;
 import com.example.signeasy.domain.common.BusinessException;
@@ -13,6 +13,8 @@ import com.example.signeasy.domain.model.customer.Customer;
 import com.example.signeasy.domain.model.customer.CustomerKey;
 import com.example.signeasy.domain.model.plan.Plan;
 import com.example.signeasy.domain.model.plan.PlanKey;
+import com.example.signeasy.domain.model.plan.PlanPrice;
+import com.example.signeasy.domain.model.plan.PlanPriceKey;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -33,7 +35,7 @@ class SubscriptionServiceTest {
     @Mock
     private CustomerRepositoryPort customerRepositoryPort;
     @Mock
-    private PlanRepositoryPort planRepositoryPort;
+    private PlanPriceRepositoryPort planPriceRepositoryPort;
     @Mock
     private SubscriptionRepositoryPort subscriptionRepositoryPort;
     @Mock
@@ -48,23 +50,25 @@ class SubscriptionServiceTest {
     void subscribeCreatesTrialSubscriptionWhenPlanHasTrialDays() {
         UUID customerId = UUID.randomUUID();
         Customer customer = buildCustomer(customerId);
-        Plan plan = buildPlan(UUID.randomUUID(), PlanType.PRO, Period.MONTHLY, 14);
+        PlanPrice planPrice = buildPlanPrice(UUID.randomUUID(), PlanType.PRO, Period.MONTHLY, 14);
 
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(customerRepositoryPort.findByIdAndTenantId(customerId, tenantId)).thenReturn(Optional.of(customer));
-        when(planRepositoryPort.findByPlanTypeAndTenantId(plan.getPlanType().name(), tenantId)).thenReturn(Optional.of(plan));
+        when(planPriceRepositoryPort.findByPlanTypeAndPeriodAndTenantId(PlanType.PRO.name(), Period.MONTHLY, tenantId)).thenReturn(Optional.of(planPrice));
         when(subscriptionRepositoryPort.save(any(Subscription.class))).thenAnswer(invocation -> invocation.getArgument(0, Subscription.class));
 
         LocalDate today = LocalDate.now();
 
-        Subscription subscription = subscriptionService.subscribe(customerId, plan.getPlanType().name());
+        Subscription subscription = subscriptionService.subscribe(customerId, PlanType.PRO.name(), Period.MONTHLY);
 
+        assertNotNull(subscription.getKey().getId());
+        assertEquals(tenantId, subscription.getKey().getTenantId());
         assertEquals(today, subscription.getStartDate());
-        assertEquals(today.plusDays(plan.getTrialDays()), subscription.getTrialEndDate());
+        assertEquals(today.plusDays(planPrice.getPlan().getTrialDays()), subscription.getTrialEndDate());
         assertEquals(subscription.getTrialEndDate(), subscription.getNextBillingDate());
         assertEquals(Subscription.Status.IN_TRIAL, subscription.getStatus());
         assertEquals(customer, subscription.getCustomer());
-        assertEquals(plan, subscription.getPlan());
+        assertEquals(planPrice, subscription.getPlanPrice());
 
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
         verify(subscriptionRepositoryPort).save(captor.capture());
@@ -75,17 +79,19 @@ class SubscriptionServiceTest {
     void subscribeActivatesImmediatelyWhenPlanHasNoTrial() {
         UUID customerId = UUID.randomUUID();
         Customer customer = buildCustomer(customerId);
-        Plan plan = buildPlan(UUID.randomUUID(), PlanType.BASIC, Period.YEARLY, 0);
+        PlanPrice planPrice = buildPlanPrice(UUID.randomUUID(), PlanType.BASIC, Period.YEARLY, 0);
 
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(customerRepositoryPort.findByIdAndTenantId(customerId, tenantId)).thenReturn(Optional.of(customer));
-        when(planRepositoryPort.findByPlanTypeAndTenantId(plan.getPlanType().name(), tenantId)).thenReturn(Optional.of(plan));
+        when(planPriceRepositoryPort.findByPlanTypeAndPeriodAndTenantId(PlanType.BASIC.name(), Period.YEARLY, tenantId)).thenReturn(Optional.of(planPrice));
         when(subscriptionRepositoryPort.save(any(Subscription.class))).thenAnswer(invocation -> invocation.getArgument(0, Subscription.class));
 
         LocalDate today = LocalDate.now();
 
-        Subscription subscription = subscriptionService.subscribe(customerId, plan.getPlanType().name());
+        Subscription subscription = subscriptionService.subscribe(customerId, PlanType.BASIC.name(), Period.YEARLY);
 
+        assertNotNull(subscription.getKey().getId());
+        assertEquals(tenantId, subscription.getKey().getTenantId());
         assertEquals(today, subscription.getStartDate());
         assertNull(subscription.getTrialEndDate());
         assertEquals(today.plusYears(1), subscription.getNextBillingDate());
@@ -98,7 +104,7 @@ class SubscriptionServiceTest {
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(customerRepositoryPort.findByIdAndTenantId(customerId, tenantId)).thenReturn(Optional.empty());
 
-        assertThrows(BusinessException.class, () -> subscriptionService.subscribe(customerId, PlanType.BASIC.name()));
+        assertThrows(BusinessException.class, () -> subscriptionService.subscribe(customerId, PlanType.BASIC.name(), Period.MONTHLY));
         verify(subscriptionRepositoryPort, never()).save(any());
     }
 
@@ -109,9 +115,9 @@ class SubscriptionServiceTest {
 
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(customerRepositoryPort.findByIdAndTenantId(customerId, tenantId)).thenReturn(Optional.of(customer));
-        when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.PRO.name(), tenantId)).thenReturn(Optional.empty());
+        when(planPriceRepositoryPort.findByPlanTypeAndPeriodAndTenantId(PlanType.PRO.name(), Period.MONTHLY, tenantId)).thenReturn(Optional.empty());
 
-        assertThrows(BusinessException.class, () -> subscriptionService.subscribe(customerId, PlanType.PRO.name()));
+        assertThrows(BusinessException.class, () -> subscriptionService.subscribe(customerId, PlanType.PRO.name(), Period.MONTHLY));
         verify(subscriptionRepositoryPort, never()).save(any());
     }
 
@@ -119,21 +125,22 @@ class SubscriptionServiceTest {
     void changePlanUpdatesSubscriptionDetails() {
         UUID subscriptionId = UUID.randomUUID();
         Subscription existingSubscription = new Subscription();
-        existingSubscription.setKey(new SubscriptionKey(subscriptionId, UUID.randomUUID(), UUID.randomUUID(), tenantId));
-        existingSubscription.setPlan(buildPlan(UUID.randomUUID(), PlanType.BASIC, Period.MONTHLY, 0));
+        existingSubscription.setKey(new SubscriptionKey(subscriptionId, tenantId));
+        existingSubscription.setPlanPrice(buildPlanPrice(UUID.randomUUID(), PlanType.BASIC, Period.MONTHLY, 0));
 
-        Plan newPlan = buildPlan(UUID.randomUUID(), PlanType.PRO, Period.MONTHLY, 0);
+        PlanPrice newPlanPrice = buildPlanPrice(UUID.randomUUID(), PlanType.PRO, Period.MONTHLY, 0);
 
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(subscriptionRepositoryPort.findByIdAndTenantId(subscriptionId, tenantId)).thenReturn(Optional.of(existingSubscription));
-        when(planRepositoryPort.findByPlanTypeAndTenantId(newPlan.getPlanType().name(), tenantId)).thenReturn(Optional.of(newPlan));
+        when(planPriceRepositoryPort.findByPlanTypeAndPeriodAndTenantId(PlanType.PRO.name(), Period.MONTHLY, tenantId)).thenReturn(Optional.of(newPlanPrice));
         when(subscriptionRepositoryPort.save(existingSubscription)).thenReturn(existingSubscription);
 
         LocalDate today = LocalDate.now();
 
-        Subscription updated = subscriptionService.changePlan(subscriptionId, newPlan.getPlanType().name());
+        Subscription updated = subscriptionService.changePlan(subscriptionId, PlanType.PRO.name(), Period.MONTHLY);
 
-        assertEquals(newPlan, updated.getPlan());
+        assertEquals(new SubscriptionKey(subscriptionId, tenantId), updated.getKey());
+        assertEquals(newPlanPrice, updated.getPlanPrice());
         assertEquals(today.plusMonths(1), updated.getNextBillingDate());
         verify(subscriptionRepositoryPort).save(existingSubscription);
     }
@@ -144,7 +151,7 @@ class SubscriptionServiceTest {
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(subscriptionRepositoryPort.findByIdAndTenantId(subscriptionId, tenantId)).thenReturn(Optional.empty());
 
-        assertThrows(BusinessException.class, () -> subscriptionService.changePlan(subscriptionId, PlanType.BASIC.name()));
+        assertThrows(BusinessException.class, () -> subscriptionService.changePlan(subscriptionId, PlanType.BASIC.name(), Period.MONTHLY));
         verify(subscriptionRepositoryPort, never()).save(any());
     }
 
@@ -153,7 +160,7 @@ class SubscriptionServiceTest {
         UUID subscriptionId = UUID.randomUUID();
         Subscription subscription = new Subscription();
         subscription.setStatus(Subscription.Status.ACTIVE);
-        subscription.setKey(new SubscriptionKey(subscriptionId, UUID.randomUUID(), UUID.randomUUID(), tenantId));
+        subscription.setKey(new SubscriptionKey(subscriptionId, tenantId));
 
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(subscriptionRepositoryPort.findByIdAndTenantId(subscriptionId, tenantId)).thenReturn(Optional.of(subscription));
@@ -163,9 +170,28 @@ class SubscriptionServiceTest {
 
         Subscription canceled = subscriptionService.cancel(subscriptionId);
 
+        assertEquals(new SubscriptionKey(subscriptionId, tenantId), canceled.getKey());
         assertEquals(Subscription.Status.CANCELED, canceled.getStatus());
         assertEquals(today, canceled.getEndDate());
         verify(subscriptionRepositoryPort).save(subscription);
+    }
+
+    @Test
+    void identityUsesOnlyIdAndTenantAndRejectsCrossTenantRelations() {
+        UUID id = UUID.randomUUID();
+        SubscriptionKey key = new SubscriptionKey(id, tenantId);
+        assertEquals(key, new SubscriptionKey(id, tenantId));
+        assertEquals(key.hashCode(), new SubscriptionKey(id, tenantId).hashCode());
+        assertNotEquals(key, new SubscriptionKey(id, "other"));
+        Subscription subscription = new Subscription();
+        subscription.setKey(key);
+        Customer customer = buildCustomer(UUID.randomUUID());
+        customer.getKey().setTenantId("other");
+        assertThrows(BusinessException.class, () -> subscription.setCustomer(customer));
+        PlanPrice planPrice = buildPlanPrice(UUID.randomUUID(), PlanType.PRO, Period.MONTHLY, 0);
+        planPrice.getKey().setTenantId("other");
+        assertThrows(BusinessException.class, () -> subscription.setPlanPrice(planPrice));
+        assertEquals(new SubscriptionKey(id, tenantId), subscription.getKey());
     }
 
     private Customer buildCustomer(UUID customerId) {
@@ -177,16 +203,20 @@ class SubscriptionServiceTest {
         return customer;
     }
 
-    private Plan buildPlan(UUID planId, PlanType planType, Period period, int trialDays) {
-        PlanKey key = new PlanKey(planId, tenantId);
+    private PlanPrice buildPlanPrice(UUID planId, PlanType planType, Period period, int trialDays) {
         Plan plan = new Plan();
-        plan.setKey(key);
+        plan.setKey(new PlanKey(planId, tenantId));
         plan.setPlanType(planType);
         plan.setName(planType.name());
-        plan.setPeriod(period);
         plan.setTrialDays(trialDays);
-        plan.setPriceCents(1999);
         plan.setActive(true);
-        return plan;
+
+        PlanPrice planPrice = new PlanPrice();
+        planPrice.setKey(new PlanPriceKey(UUID.randomUUID(), tenantId));
+        planPrice.setPlan(plan);
+        planPrice.setPeriod(period);
+        planPrice.setPriceCents(1999);
+        planPrice.setActive(true);
+        return planPrice;
     }
 }

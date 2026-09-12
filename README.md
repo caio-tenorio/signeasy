@@ -3,7 +3,7 @@
 Multi-tenant SaaS subscription API built with Spring Boot 3.3 and Java 21. The project follows a hexagonal architecture that separates business rules, application services and adapters (web/JPA). The application exposes secured endpoints to manage customers, plans and subscriptions, deriving the tenant and roles from JWT tokens.
 
 ## Layered architecture
-- `domain`: rich entities (`Customer`, `Plan`, `Subscription`), domain types (`Period`, `PlanType`) and business exceptions.
+- `domain`: rich entities (`Customer`, `Plan`, `PlanPrice`, `Subscription`), domain types (`Period`, `PlanType`) and business exceptions.
 - `application`: transactional services enforcing rules (e.g., unique email checks, trial/next billing calculation) and defining ports (`CustomerRepositoryPort`, `TenantContext`, etc.).
 - `adapters/persistence-jpa`: JPA implementations of the ports, with Flyway migrations (`db/migration`) and PostgreSQL support.
 - `adapters/web`: REST API, logging filters, automatic user provisioning and OAuth2 Resource Server / JWT integration.
@@ -21,7 +21,7 @@ Multi-tenant SaaS subscription API built with Spring Boot 3.3 and Java 21. The p
 
 ## Key features
 - Tenant-aware customer management with unique email validation.
-- Plan definitions (type, period, price, trial days) and active plan listing.
+- Plan tiers (type, name, trial days) decoupled from pricing: each tier can have several `PlanPrice` variants, one per billing period (e.g. `PRO` monthly and `PRO` yearly), each with its own price.
 - Subscription lifecycle: create, change plan and cancel with automatic date handling.
 - Multi-tenancy based on the `tenantId` claim from JWT, propagated through `TenantContextHolder`.
 - Automatic `Customer` provisioning for the authenticated user (claims `sub`, `email`, `name`).
@@ -87,10 +87,12 @@ All properties can be overridden through environment variables (`SPRING_DATASOUR
 |--------|----------------------------------------|-------------------------------------------------------------------|----------------|
 | POST   | `/api/customers`                       | Create a customer for the current tenant                          | `ROLE_ADMIN`   |
 | GET    | `/api/customers?email=`                | Retrieve a customer by email within the tenant                    | Any authenticated user |
-| POST   | `/api/plans`                           | Register a plan (type, price, period, trial)                      | `ROLE_ADMIN`   |
-| GET    | `/api/plans`                           | List active plans for the tenant                                  | `ROLE_ADMIN`, `ROLE_TENANT_ADMIN`, `ROLE_USER` |
-| POST   | `/api/subscriptions`                   | Create a subscription for a customer/plan                         | `ROLE_TENANT_ADMIN`, `ROLE_USER` |
-| POST   | `/api/subscriptions/{id}/change-plan`  | Switch the plan of an existing subscription                       | `ROLE_TENANT_ADMIN`, `ROLE_USER` |
+| POST   | `/api/plans`                           | Register a plan tier (type, name, trial)                          | `ROLE_ADMIN`   |
+| GET    | `/api/plans`                           | List active plan tiers for the tenant                              | `ROLE_ADMIN`, `ROLE_TENANT_ADMIN`, `ROLE_USER` |
+| POST   | `/api/plans/prices`                    | Register a price for a plan tier (type, period, price)            | `ROLE_ADMIN`   |
+| GET    | `/api/plans/prices`                    | List active plan prices for the tenant                             | `ROLE_ADMIN`, `ROLE_TENANT_ADMIN`, `ROLE_USER` |
+| POST   | `/api/subscriptions`                   | Create a subscription for a customer/plan price                   | `ROLE_TENANT_ADMIN`, `ROLE_USER` |
+| POST   | `/api/subscriptions/{id}/change-plan`  | Switch the plan price of an existing subscription                 | `ROLE_TENANT_ADMIN`, `ROLE_USER` |
 | POST   | `/api/subscriptions/{id}/cancel`       | Cancel a subscription and set the end date                        | `ROLE_TENANT_ADMIN`, `ROLE_USER` |
 
 ### Payload examples
@@ -107,24 +109,35 @@ POST /api/plans
 {
   "planType": "BASIC",
   "name": "Basic Plan",
-  "priceCents": 1990,
-  "period": "MONTHLY",
   "trialDays": 14
 }
 ```
 
 ```json
+POST /api/plans/prices
+{
+  "planType": "BASIC",
+  "period": "MONTHLY",
+  "priceCents": 1990
+}
+```
+
+A plan tier can have one price per period (e.g. `BASIC`/`MONTHLY` and `BASIC`/`YEARLY` side by side) — `(tenantId, planType, period)` is the uniqueness key, so different periods of the same tier no longer collide.
+
+```json
 POST /api/subscriptions
 {
   "customerId": "0c54c6b9-0ad5-4c6e-b5f4-3c4aa0d09450",
-  "planType": "BASIC"
+  "planType": "BASIC",
+  "period": "MONTHLY"
 }
 ```
 
 ```json
 POST /api/subscriptions/{id}/change-plan
 {
-  "newPlanType": "PRO"
+  "newPlanType": "PRO",
+  "newPeriod": "MONTHLY"
 }
 ```
 
@@ -148,3 +161,27 @@ POST /api/subscriptions/{id}/change-plan
 - Provide scripts/examples to generate JWTs for local testing (Keycloak or mocked tokens).
 - Expand integration test coverage for the exposed endpoints.
 - Add extra monitoring (custom metrics) if needed.
+
+## Subscription identity
+
+A subscription is identified by `(id, tenantId)`. Creation assigns a random UUID before persistence; changing its plan or canceling it preserves that identity. Repository lookups use the subscription ID, not the customer ID.
+
+Subscription responses now contain only `id` and `tenantId` in `key`. The former `key.customerId` and `key.planId` fields have been removed; related identifiers remain available through `customer.key` and `planPrice.key`.
+
+Subscriptions reference a `PlanPrice` (tier + period + price), not a `Plan` tier directly — see [Plan pricing model](#plan-pricing-model) below for why.
+
+Run unit and PostgreSQL/Testcontainers integration tests with Java 21 and Docker available:
+
+```sh
+mvn -B verify
+```
+
+To run the subscription integration tests alongside the existing unit tests:
+
+```sh
+mvn -B verify -Dit.test=SubscriptionPersistenceIT,SubscriptionHttpIT -Dfailsafe.failIfNoSpecifiedTests=false
+```
+
+## Plan pricing model
+
+`Plan` used to hold a single `period`/`priceCents` pair, so `(tenantId, planType)` was the plan's uniqueness key — a tenant could not have both a monthly and a yearly `PRO` plan at the same time. `Plan` now models only the tier (type, name, trial days); pricing lives in `PlanPrice`, one row per `(tenantId, planId, period)`. A subscription points at a `PlanPrice`, so it carries both the tier and the billing period it was sold at. Creating two prices for the same tier with different periods is expected and no longer collides.

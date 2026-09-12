@@ -28,7 +28,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // liberar health e docs
-                        .requestMatchers("/actuator/health", "/v3/api-docs/**", "/swagger/**").permitAll()
+                        .requestMatchers("/actuator/health", "/v3/api-docs/**",
+                                "/swagger", "/swagger/**", "/swagger-ui/**").permitAll()
                         // RBAC de exemplo
                         .requestMatchers(HttpMethod.POST, "/api/plans/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/plans/**").hasAnyRole("ADMIN", "TENANT_ADMIN", "USER")
