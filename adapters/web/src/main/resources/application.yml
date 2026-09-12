@@ -24,7 +24,12 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
+  endpoint:
+    metrics:
+      enabled: true
+    info:
+      enabled: true
 
 springdoc:
   api-docs:
