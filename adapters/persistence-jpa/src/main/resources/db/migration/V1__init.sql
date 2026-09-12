@@ -20,12 +20,23 @@ CREATE TABLE IF NOT EXISTS plans
     tenant_id   VARCHAR(30) NOT NULL,
     plan_type   TEXT        NOT NULL,
     name        TEXT        NOT NULL,
-    price_cents BIGINT      NOT NULL CHECK (price_cents >= 0),
-    period      TEXT        NOT NULL,
     trial_days  INT         NOT NULL DEFAULT 0,
     active      BOOLEAN     NOT NULL DEFAULT TRUE,
     CONSTRAINT uk_plan_type UNIQUE (tenant_id, plan_type),
     CONSTRAINT pk_plan PRIMARY KEY (id, tenant_id)
+);
+
+CREATE TABLE IF NOT EXISTS plan_prices
+(
+    id          UUID        NOT NULL,
+    tenant_id   VARCHAR(30) NOT NULL,
+    plan_id     UUID        NOT NULL,
+    period      TEXT        NOT NULL,
+    price_cents BIGINT      NOT NULL CHECK (price_cents >= 0),
+    active      BOOLEAN     NOT NULL DEFAULT TRUE,
+    CONSTRAINT uk_plan_price_period UNIQUE (tenant_id, plan_id, period),
+    CONSTRAINT pk_plan_price PRIMARY KEY (id, tenant_id),
+    CONSTRAINT fk_plan_price_plan FOREIGN KEY (plan_id, tenant_id) REFERENCES plans (id, tenant_id)
 );
 
 CREATE TABLE IF NOT EXISTS subscriptions
@@ -33,7 +44,7 @@ CREATE TABLE IF NOT EXISTS subscriptions
     id                UUID        NOT NULL,
     tenant_id         VARCHAR(30) NOT NULL,
     customer_id       UUID        NOT NULL,
-    plan_id           UUID        NOT NULL,
+    plan_price_id     UUID        NOT NULL,
     status            TEXT        NOT NULL,
     start_date        DATE,
     trial_end_date    DATE,
@@ -41,5 +52,5 @@ CREATE TABLE IF NOT EXISTS subscriptions
     end_date          DATE,
     CONSTRAINT pk_subscription PRIMARY KEY (id, tenant_id),
     CONSTRAINT fk_subscription_customer FOREIGN KEY (customer_id, tenant_id) REFERENCES customers (id, tenant_id),
-    CONSTRAINT fk_subscription_plan FOREIGN KEY (plan_id, tenant_id) REFERENCES plans (id, tenant_id)
+    CONSTRAINT fk_subscription_plan_price FOREIGN KEY (plan_price_id, tenant_id) REFERENCES plan_prices (id, tenant_id)
 );

@@ -2,10 +2,12 @@ package com.example.signeasy.domain.model.plan;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import java.io.Serializable;
 import java.util.UUID;
+import java.util.Objects;
 
 @Embeddable
-public class PlanKey {
+public class PlanKey implements Serializable {
     @Column(nullable = false, updatable = false)
     private UUID id;
 
@@ -34,4 +36,14 @@ public class PlanKey {
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (!(other instanceof PlanKey that)) return false;
+        return Objects.equals(id, that.id) && Objects.equals(tenantId, that.tenantId);
+    }
+
+    @Override
+    public int hashCode() { return Objects.hash(id, tenantId); }
 }

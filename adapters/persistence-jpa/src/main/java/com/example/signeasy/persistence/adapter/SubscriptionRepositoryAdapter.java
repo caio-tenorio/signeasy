@@ -21,6 +21,6 @@ public class SubscriptionRepositoryAdapter implements SubscriptionRepositoryPort
 
     @Override
     public Optional<Subscription> findByIdAndTenantId(UUID id, String tenantId) {
-        return repo.findByKeyCustomerIdAndKeyTenantId(id, tenantId);
+        return repo.findByKeyIdAndKeyTenantId(id, tenantId);
     }
 }

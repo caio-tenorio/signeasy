@@ -33,6 +33,63 @@ class CustomerServiceTest {
     private final String tenantId = "tenant-abc";
 
     @Test
+    void createWithoutKeyPersistsCompleteKey() {
+        Customer input = new Customer();
+        input.setEmail("new@example.com");
+        when(tenantContext.currentTenantId()).thenReturn(tenantId);
+        when(customerRepositoryPort.findByEmailAndTenantId("new@example.com", tenantId)).thenReturn(Optional.empty());
+        when(customerRepositoryPort.save(input)).thenAnswer(invocation -> {
+            Customer saved = invocation.getArgument(0);
+            assertNotNull(saved.getKey().getId());
+            assertEquals(4, saved.getKey().getId().version());
+            assertEquals(tenantId, saved.getKey().getTenantId());
+            return saved;
+        });
+
+        assertSame(input, customerService.create(input));
+        verify(customerRepositoryPort).save(input);
+    }
+
+    @Test
+    void createWithIncompleteKeyPersistsCompleteKey() {
+        Customer input = new Customer();
+        input.setEmail("new@example.com");
+        input.setKey(new CustomerKey(null, "other-tenant"));
+        when(tenantContext.currentTenantId()).thenReturn(tenantId);
+        when(customerRepositoryPort.findByEmailAndTenantId("new@example.com", tenantId)).thenReturn(Optional.empty());
+        when(customerRepositoryPort.save(input)).thenAnswer(invocation -> {
+            Customer saved = invocation.getArgument(0);
+            assertNotNull(saved.getKey().getId());
+            assertEquals(4, saved.getKey().getId().version());
+            assertEquals(tenantId, saved.getKey().getTenantId());
+            return saved;
+        });
+
+        assertSame(input, customerService.create(input));
+        verify(customerRepositoryPort).save(input);
+    }
+
+    @Test
+    void createWithExistingIdPersistsCompleteKey() {
+        UUID existingId = UUID.randomUUID();
+        Customer input = new Customer();
+        input.setEmail("new@example.com");
+        input.setKey(new CustomerKey(existingId, "other-tenant"));
+        when(tenantContext.currentTenantId()).thenReturn(tenantId);
+        when(customerRepositoryPort.findByEmailAndTenantId("new@example.com", tenantId)).thenReturn(Optional.empty());
+        when(customerRepositoryPort.save(input)).thenAnswer(invocation -> {
+            Customer saved = invocation.getArgument(0);
+            assertNotNull(saved.getKey().getId());
+            assertEquals(existingId, saved.getKey().getId());
+            assertEquals(tenantId, saved.getKey().getTenantId());
+            return saved;
+        });
+
+        assertSame(input, customerService.create(input));
+        verify(customerRepositoryPort).save(input);
+    }
+
+    @Test
     void createThrowsWhenEmailAlreadyExists() {
         Customer existing = buildCustomer(UUID.randomUUID(), "john@example.com");
         Customer input = buildCustomer(UUID.randomUUID(), "john@example.com");

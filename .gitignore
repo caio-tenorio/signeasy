@@ -28,3 +28,6 @@ replay_pid*
 
 target/
 logs
+
+#AI
+.mcp.json
