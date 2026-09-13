@@ -3,9 +3,9 @@
 Multi-tenant SaaS subscription API built with Spring Boot 3.3 and Java 21. The project follows a hexagonal architecture that separates business rules, application services and adapters (web/JPA). The application exposes secured endpoints to manage customers, plans and subscriptions, deriving the tenant and roles from JWT tokens.
 
 ## Layered architecture
-- `domain`: rich entities (`Customer`, `Plan`, `PlanPrice`, `Subscription`), domain types (`Period`, `PlanType`) and business exceptions.
+- `domain`: business models (`Customer`, `Plan`, `PlanPrice`, `Subscription`), domain types (`Period`, `PlanType`) and business exceptions, without JPA or Jackson dependencies.
 - `application`: transactional services enforcing rules (e.g., unique email checks, trial/next billing calculation) and defining ports (`CustomerRepositoryPort`, `TenantContext`, etc.).
-- `adapters/persistence-jpa`: JPA implementations of the ports, with Flyway migrations (`db/migration`) and PostgreSQL support.
+- `adapters/persistence-jpa`: JPA entities and composite keys, explicit domain mappers and transactional implementations of the ports, with Flyway migrations (`db/migration`) and PostgreSQL support.
 - `adapters/web`: REST API, logging filters, automatic user provisioning and OAuth2 Resource Server / JWT integration.
 
 ```
@@ -20,6 +20,9 @@ Multi-tenant SaaS subscription API built with Spring Boot 3.3 and Java 21. The p
 ```
 
 ## Key features
+
+Customer audit timestamps (`createdAt`, `updatedAt`) belong exclusively to persistence. JPA callbacks generate them on insert and refresh `updatedAt` on changes; domain models and HTTP DTOs do not expose them. Repository updates preserve existing audit data. Related entities are resolved by composite key without cascading changes to nested domain objects, and returned domain graphs are fully materialized inside the adapter transaction (`open-in-view=false`).
+
 - Tenant-aware customer management with unique email validation.
 - Plan tiers (type, name, trial days) decoupled from pricing: each tier can have several `PlanPrice` variants, one per billing period (e.g. `PRO` monthly and `PRO` yearly), each with its own price.
 - Subscription lifecycle: create, change plan and cancel with automatic date handling.

@@ -1,13 +1,18 @@
-package com.example.signeasy.domain.model.plan;
+package com.example.signeasy.persistence.entity;
 
 import com.example.signeasy.domain.common.PlanType;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
-public class Plan {
+@Entity
+@Table(name = "plans", uniqueConstraints = @UniqueConstraint(name = "uk_plan_type", columnNames = {"tenant_id", "planType"}))
+public class PlanJpaEntity {
+    @EmbeddedId
+    private PlanJpaKey key;
 
-    private PlanKey key;
-
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PlanType planType;
 
     @NotBlank
@@ -16,11 +21,12 @@ public class Plan {
     @Min(0)
     private int trialDays = 0;
 
+    @Column(nullable = false)
     private boolean active = true;
 
-    public Plan() {}
+    public PlanJpaEntity() {}
 
-    public Plan(PlanKey key, PlanType planType, String name, int trialDays, boolean active) {
+    public PlanJpaEntity(PlanJpaKey key, PlanType planType, String name, int trialDays, boolean active) {
         this.key = key;
         this.planType = planType;
         this.name = name;
@@ -28,11 +34,11 @@ public class Plan {
         this.active = active;
     }
 
-    public PlanKey getKey() {
+    public PlanJpaKey getKey() {
         return key;
     }
 
-    public void setKey(PlanKey key) {
+    public void setKey(PlanJpaKey key) {
         this.key = key;
     }
 
@@ -70,7 +76,7 @@ public class Plan {
 
     public void setTenantId(String tenantId) {
         if (this.key == null) {
-            this.key = new PlanKey();
+            this.key = new PlanJpaKey();
         }
         this.key.setTenantId(tenantId);
     }
