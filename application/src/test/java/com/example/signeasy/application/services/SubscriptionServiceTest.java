@@ -55,7 +55,7 @@ class SubscriptionServiceTest {
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(customerRepositoryPort.findByIdAndTenantId(customerId, tenantId)).thenReturn(Optional.of(customer));
         when(planPriceRepositoryPort.findByPlanTypeAndPeriodAndTenantId(PlanType.PRO.name(), Period.MONTHLY, tenantId)).thenReturn(Optional.of(planPrice));
-        when(subscriptionRepositoryPort.save(any(Subscription.class))).thenAnswer(invocation -> invocation.getArgument(0, Subscription.class));
+        when(subscriptionRepositoryPort.create(any(Subscription.class))).thenAnswer(invocation -> invocation.getArgument(0, Subscription.class));
 
         LocalDate today = LocalDate.now();
 
@@ -71,7 +71,7 @@ class SubscriptionServiceTest {
         assertEquals(planPrice, subscription.getPlanPrice());
 
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
-        verify(subscriptionRepositoryPort).save(captor.capture());
+        verify(subscriptionRepositoryPort).create(captor.capture());
         assertSame(subscription, captor.getValue());
     }
 
@@ -84,7 +84,7 @@ class SubscriptionServiceTest {
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(customerRepositoryPort.findByIdAndTenantId(customerId, tenantId)).thenReturn(Optional.of(customer));
         when(planPriceRepositoryPort.findByPlanTypeAndPeriodAndTenantId(PlanType.BASIC.name(), Period.YEARLY, tenantId)).thenReturn(Optional.of(planPrice));
-        when(subscriptionRepositoryPort.save(any(Subscription.class))).thenAnswer(invocation -> invocation.getArgument(0, Subscription.class));
+        when(subscriptionRepositoryPort.create(any(Subscription.class))).thenAnswer(invocation -> invocation.getArgument(0, Subscription.class));
 
         LocalDate today = LocalDate.now();
 
@@ -105,7 +105,7 @@ class SubscriptionServiceTest {
         when(customerRepositoryPort.findByIdAndTenantId(customerId, tenantId)).thenReturn(Optional.empty());
 
         assertThrows(BusinessException.class, () -> subscriptionService.subscribe(customerId, PlanType.BASIC.name(), Period.MONTHLY));
-        verify(subscriptionRepositoryPort, never()).save(any());
+        verify(subscriptionRepositoryPort, never()).create(any());
     }
 
     @Test
@@ -118,7 +118,7 @@ class SubscriptionServiceTest {
         when(planPriceRepositoryPort.findByPlanTypeAndPeriodAndTenantId(PlanType.PRO.name(), Period.MONTHLY, tenantId)).thenReturn(Optional.empty());
 
         assertThrows(BusinessException.class, () -> subscriptionService.subscribe(customerId, PlanType.PRO.name(), Period.MONTHLY));
-        verify(subscriptionRepositoryPort, never()).save(any());
+        verify(subscriptionRepositoryPort, never()).create(any());
     }
 
     @Test
@@ -133,7 +133,7 @@ class SubscriptionServiceTest {
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(subscriptionRepositoryPort.findByIdAndTenantId(subscriptionId, tenantId)).thenReturn(Optional.of(existingSubscription));
         when(planPriceRepositoryPort.findByPlanTypeAndPeriodAndTenantId(PlanType.PRO.name(), Period.MONTHLY, tenantId)).thenReturn(Optional.of(newPlanPrice));
-        when(subscriptionRepositoryPort.save(existingSubscription)).thenReturn(existingSubscription);
+        when(subscriptionRepositoryPort.update(existingSubscription)).thenReturn(existingSubscription);
 
         LocalDate today = LocalDate.now();
 
@@ -142,7 +142,7 @@ class SubscriptionServiceTest {
         assertEquals(new SubscriptionKey(subscriptionId, tenantId), updated.getKey());
         assertEquals(newPlanPrice, updated.getPlanPrice());
         assertEquals(today.plusMonths(1), updated.getNextBillingDate());
-        verify(subscriptionRepositoryPort).save(existingSubscription);
+        verify(subscriptionRepositoryPort).update(existingSubscription);
     }
 
     @Test
@@ -152,7 +152,7 @@ class SubscriptionServiceTest {
         when(subscriptionRepositoryPort.findByIdAndTenantId(subscriptionId, tenantId)).thenReturn(Optional.empty());
 
         assertThrows(BusinessException.class, () -> subscriptionService.changePlan(subscriptionId, PlanType.BASIC.name(), Period.MONTHLY));
-        verify(subscriptionRepositoryPort, never()).save(any());
+        verify(subscriptionRepositoryPort, never()).update(any());
     }
 
     @Test
@@ -164,7 +164,7 @@ class SubscriptionServiceTest {
 
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(subscriptionRepositoryPort.findByIdAndTenantId(subscriptionId, tenantId)).thenReturn(Optional.of(subscription));
-        when(subscriptionRepositoryPort.save(subscription)).thenAnswer(invocation -> invocation.getArgument(0, Subscription.class));
+        when(subscriptionRepositoryPort.update(subscription)).thenAnswer(invocation -> invocation.getArgument(0, Subscription.class));
 
         LocalDate today = LocalDate.now();
 
@@ -173,7 +173,7 @@ class SubscriptionServiceTest {
         assertEquals(new SubscriptionKey(subscriptionId, tenantId), canceled.getKey());
         assertEquals(Subscription.Status.CANCELED, canceled.getStatus());
         assertEquals(today, canceled.getEndDate());
-        verify(subscriptionRepositoryPort).save(subscription);
+        verify(subscriptionRepositoryPort).update(subscription);
     }
 
     @Test

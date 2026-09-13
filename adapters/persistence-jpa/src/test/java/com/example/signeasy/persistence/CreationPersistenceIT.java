@@ -1,14 +1,20 @@
 package com.example.signeasy.persistence;
 
+import com.example.signeasy.persistence.entity.*;
+
 import com.example.signeasy.application.ports.CustomerRepositoryPort;
 import com.example.signeasy.application.ports.PlanRepositoryPort;
+import com.example.signeasy.application.ports.PlanPriceRepositoryPort;
 import com.example.signeasy.application.services.CustomerService;
 import com.example.signeasy.application.services.PlanService;
 import com.example.signeasy.domain.common.PlanType;
+import com.example.signeasy.domain.common.Period;
 import com.example.signeasy.domain.model.customer.Customer;
 import com.example.signeasy.domain.model.customer.CustomerKey;
 import com.example.signeasy.domain.model.plan.Plan;
 import com.example.signeasy.domain.model.plan.PlanKey;
+import com.example.signeasy.domain.model.plan.PlanPrice;
+import com.example.signeasy.domain.model.plan.PlanPriceKey;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,9 +55,9 @@ class CreationPersistenceIT {
 
     @Configuration
     @EnableAutoConfiguration
-    @EntityScan("com.example.signeasy.domain.model")
+    @EntityScan("com.example.signeasy.persistence.entity")
     @EnableJpaRepositories("com.example.signeasy.persistence.jpa")
-    @ComponentScan("com.example.signeasy.persistence.adapter")
+    @ComponentScan({"com.example.signeasy.persistence.adapter", "com.example.signeasy.persistence.mapper"})
     static class Config {
         @Bean
         PlanService plans(PlanRepositoryPort repository) {
@@ -66,6 +72,9 @@ class CreationPersistenceIT {
 
     @Autowired PlanService plans;
     @Autowired CustomerService customers;
+    @Autowired CustomerRepositoryPort customerRepository;
+    @Autowired PlanRepositoryPort planRepository;
+    @Autowired PlanPriceRepositoryPort priceRepository;
     @Autowired EntityManager em;
     @Autowired PlatformTransactionManager transactionManager;
 
@@ -84,11 +93,11 @@ class CreationPersistenceIT {
         assertEquals(TENANT, saved.getKey().getTenantId());
 
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            Plan reloaded = em.find(Plan.class, new PlanKey(id, TENANT));
+            PlanJpaEntity reloaded = em.find(PlanJpaEntity.class, new PlanJpaKey(id, TENANT));
             assertNotNull(reloaded);
             assertEquals("Plano Teste", reloaded.getName());
             assertEquals(1, reloaded.getTrialDays());
-            assertNull(em.find(Plan.class, new PlanKey(id, "other-tenant")));
+            assertNull(em.find(PlanJpaEntity.class, new PlanJpaKey(id, "other-tenant")));
         });
     }
 
@@ -103,11 +112,11 @@ class CreationPersistenceIT {
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
             for (Customer saved : new Customer[]{first, second}) {
                 assertEquals(TENANT, saved.getKey().getTenantId());
-                Customer reloaded = em.find(Customer.class, new CustomerKey(saved.getKey().getId(), TENANT));
+                CustomerJpaEntity reloaded = em.find(CustomerJpaEntity.class, new CustomerJpaKey(saved.getKey().getId(), TENANT));
                 assertNotNull(reloaded);
                 assertEquals(saved.getEmail(), reloaded.getEmail());
                 assertNotNull(reloaded.getCreatedAt());
-                assertNull(em.find(Customer.class, new CustomerKey(saved.getKey().getId(), "other-tenant")));
+                assertNull(em.find(CustomerJpaEntity.class, new CustomerJpaKey(saved.getKey().getId(), "other-tenant")));
             }
         });
     }
@@ -118,10 +127,101 @@ class CreationPersistenceIT {
         customers.provisionIfNotExists(userId.toString(), TENANT, "login@example.test", "Login User");
 
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            Customer reloaded = em.find(Customer.class, new CustomerKey(userId, TENANT));
+            CustomerJpaEntity reloaded = em.find(CustomerJpaEntity.class, new CustomerJpaKey(userId, TENANT));
             assertNotNull(reloaded);
             assertEquals("login@example.test", reloaded.getEmail());
         });
+    }
+
+    @Test
+    void auditIsGeneratedAndPreservedWhenSavingDetachedDomain() {
+        Customer saved = customers.create(customer("audit@example.test"));
+        var key = new CustomerJpaKey(saved.getKey().getId(), TENANT);
+        var tx = new TransactionTemplate(transactionManager);
+        var original = tx.execute(status -> {
+            CustomerJpaEntity entity = em.find(CustomerJpaEntity.class, key);
+            assertNotNull(entity.getCreatedAt());
+            assertEquals(entity.getCreatedAt(), entity.getUpdatedAt());
+            return entity.getCreatedAt();
+        });
+
+        Customer detached = customerRepository.findByIdAndTenantId(key.getId(), TENANT).orElseThrow();
+        detached.setName("Updated name");
+        customerRepository.update(detached);
+
+        tx.executeWithoutResult(status -> {
+            CustomerJpaEntity entity = em.find(CustomerJpaEntity.class, key);
+            assertEquals(original, entity.getCreatedAt());
+            assertTrue(entity.getUpdatedAt().isAfter(original));
+            assertEquals("Updated name", entity.getName());
+        });
+    }
+
+    @Test
+    void priceRoundTripUsesExistingPlanWithoutCascadingDomainChanges() {
+        String tenant = "price-mapping";
+        Plan plan = planRepository.create(new Plan(new PlanKey(UUID.randomUUID(), tenant),
+                PlanType.PRO, "Original plan", 14, true));
+        plan.setName("Local change that must not be persisted through a price");
+        PlanPrice saved = priceRepository.create(new PlanPrice(new PlanPriceKey(UUID.randomUUID(), tenant),
+                plan, Period.MONTHLY, 2500, true));
+        assertEquals("Original plan", saved.getPlan().getName());
+        assertEquals(plan.getKey(), saved.getPlan().getKey());
+
+        PlanPrice reloaded = priceRepository.findByPlanTypeAndPeriodAndTenantId("PRO", Period.MONTHLY, tenant)
+                .orElseThrow();
+        assertEquals(14, reloaded.getPlan().getTrialDays());
+        reloaded.setPriceCents(3000);
+        priceRepository.update(reloaded);
+        var prices = priceRepository.listActivePricesByTenantId(tenant);
+        assertEquals(1, prices.size());
+        assertEquals(saved.getKey(), prices.getFirst().getKey());
+        assertEquals(3000, prices.getFirst().getPriceCents());
+        assertEquals("Original plan", prices.getFirst().getPlan().getName());
+        assertTrue(priceRepository.listActivePricesByTenantId("missing-tenant").isEmpty());
+        assertEquals("Original plan", planRepository.listActivePlansByTenantId(tenant).getFirst().getName());
+    }
+
+    @Test
+    void updateRejectsMissingKeys() {
+        Customer customer = new Customer();
+        customer.setKey(new CustomerKey(UUID.randomUUID(), "missing"));
+        Plan plan = new Plan(new PlanKey(UUID.randomUUID(), "missing"), PlanType.BASIC, "Missing", 0, true);
+        PlanPrice price = new PlanPrice(new PlanPriceKey(UUID.randomUUID(), "missing"), plan, Period.MONTHLY, 1000, true);
+
+        assertThrows(com.example.signeasy.domain.common.BusinessException.class, () -> customerRepository.update(customer));
+        assertThrows(com.example.signeasy.domain.common.BusinessException.class, () -> planRepository.update(plan));
+        assertThrows(com.example.signeasy.domain.common.BusinessException.class, () -> priceRepository.update(price));
+        assertTrue(customerRepository.findByIdAndTenantId(customer.getKey().getId(), "missing").isEmpty());
+        assertTrue(planRepository.listActivePlansByTenantId("missing").isEmpty());
+        assertTrue(priceRepository.listActivePricesByTenantId("missing").isEmpty());
+    }
+
+    @Test
+    void duplicateCreatesFailAndPlanUpdatePreservesIdentity() {
+        String tenant = "explicit-create";
+        Customer customer = customer("duplicate@example.test");
+        customer.setKey(new CustomerKey(UUID.randomUUID(), tenant));
+        customerRepository.create(customer);
+        Plan plan = planRepository.create(new Plan(new PlanKey(UUID.randomUUID(), tenant), PlanType.BASIC, "Original", 0, true));
+        PlanPrice price = priceRepository.create(new PlanPrice(new PlanPriceKey(UUID.randomUUID(), tenant), plan, Period.MONTHLY, 1000, true));
+
+        customer.setName("Duplicate");
+        plan.setName("Duplicate");
+        price.setPriceCents(2000);
+        // Each adapter call owns its transaction, so these assertions include commit.
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> customerRepository.create(customer));
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> planRepository.create(plan));
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> priceRepository.create(price));
+        assertEquals("Test Customer", customerRepository.findByIdAndTenantId(customer.getKey().getId(), tenant).orElseThrow().getName());
+        assertEquals("Original", planRepository.findByPlanTypeAndTenantId("BASIC", tenant).orElseThrow().getName());
+        assertEquals(1000, priceRepository.findByPlanTypeAndPeriodAndTenantId("BASIC", Period.MONTHLY, tenant).orElseThrow().getPriceCents());
+
+        plan.setName("Updated");
+        planRepository.update(plan);
+        Plan reloaded = planRepository.findByPlanTypeAndTenantId("BASIC", tenant).orElseThrow();
+        assertEquals(plan.getKey(), reloaded.getKey());
+        assertEquals("Updated", reloaded.getName());
     }
 
     private Customer customer(String email) {

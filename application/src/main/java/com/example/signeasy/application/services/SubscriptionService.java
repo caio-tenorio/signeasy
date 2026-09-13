@@ -55,7 +55,7 @@ public class SubscriptionService {
             subscription.setStatus(Subscription.Status.ACTIVE);
             subscription.setNextBillingDate(nextBillingFrom(planPrice));
         }
-        return subscriptionRepositoryPort.save(subscription);
+        return subscriptionRepositoryPort.create(subscription);
     }
 
     public Subscription changePlan(UUID subscriptionId, String planType, Period period) {
@@ -66,14 +66,14 @@ public class SubscriptionService {
                 .orElseThrow(() -> new BusinessException("Plan not found"));
         subscription.setPlanPrice(planPrice);
         subscription.setNextBillingDate(nextBillingFrom(planPrice));
-        return subscriptionRepositoryPort.save(subscription);
+        return subscriptionRepositoryPort.update(subscription);
     }
 
     public Subscription cancel(UUID subscriptionId) {
         var s = subscriptionRepositoryPort.findByIdAndTenantId(subscriptionId, tenantContext.currentTenantId()).orElseThrow(() -> new BusinessException("Subscription not found"));
         s.setStatus(Subscription.Status.CANCELED);
         s.setEndDate(LocalDate.now());
-        return subscriptionRepositoryPort.save(s);
+        return subscriptionRepositoryPort.update(s);
     }
 
     private LocalDate nextBillingFrom(PlanPrice planPrice) {

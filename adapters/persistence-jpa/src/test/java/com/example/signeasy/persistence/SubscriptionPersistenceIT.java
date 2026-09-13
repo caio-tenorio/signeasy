@@ -1,5 +1,8 @@
 package com.example.signeasy.persistence;
 
+import com.example.signeasy.persistence.entity.*;
+import com.example.signeasy.persistence.mapper.*;
+
 import com.example.signeasy.application.ports.*;
 import com.example.signeasy.application.services.SubscriptionService;
 import com.example.signeasy.domain.common.*;
@@ -38,9 +41,9 @@ class SubscriptionPersistenceIT {
     }
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    @EntityScan("com.example.signeasy.domain.model")
+    @EntityScan("com.example.signeasy.persistence.entity")
     @EnableJpaRepositories("com.example.signeasy.persistence.jpa")
-    @ComponentScan(basePackages = "com.example.signeasy.persistence.adapter")
+    @ComponentScan({"com.example.signeasy.persistence.adapter", "com.example.signeasy.persistence.mapper"})
     static class Config {
         @Bean SubscriptionService subscriptions(CustomerRepositoryPort c, PlanPriceRepositoryPort p, SubscriptionRepositoryPort s) {
             return new SubscriptionService(c, p, s, () -> "alpha");
@@ -49,6 +52,8 @@ class SubscriptionPersistenceIT {
     @Autowired SubscriptionService service;
     @Autowired SubscriptionRepositoryPort subscriptions;
     @Autowired EntityManager em;
+    @Autowired CustomerJpaMapper customerMapper;
+    @Autowired PlanPriceJpaMapper priceMapper;
     @Autowired PlatformTransactionManager transactionManager;
 
     private void transaction(Runnable action) {
@@ -61,21 +66,53 @@ class SubscriptionPersistenceIT {
     }
     private PlanPrice planPrice(String tenant, PlanType type) {
         Plan p = new Plan(new PlanKey(UUID.randomUUID(), tenant), type, type.name(), 7, true);
-        em.persist(p);
+        em.persist(new PlanJpaMapper().toEntity(p));
         PlanPrice price = new PlanPrice(new PlanPriceKey(UUID.randomUUID(), tenant), p, Period.MONTHLY, 1000, true);
-        em.persist(price);
+        em.persist(priceMapper.toEntity(price));
         return price;
+    }
+
+    @Test void updateRejectsMissingSubscription() {
+        Subscription missing = new Subscription();
+        missing.setKey(new SubscriptionKey(UUID.randomUUID(), "alpha"));
+        BusinessException error = assertThrows(BusinessException.class, () -> subscriptions.update(missing));
+        assertEquals("Subscription not found", error.getMessage());
+        assertTrue(subscriptions.findByIdAndTenantId(missing.getKey().getId(), "alpha").isEmpty());
+    }
+
+    @Test void createRejectsExistingKeyWithoutUpdatingIt() {
+        UUID customerId = UUID.randomUUID();
+        UUID subscriptionId = UUID.randomUUID();
+        transaction(() -> {
+            Customer c = customer(customerId, "duplicate-test");
+            em.persist(customerMapper.toEntity(c));
+            Subscription subscription = new Subscription();
+            subscription.setKey(new SubscriptionKey(subscriptionId, "duplicate-test"));
+            subscription.setCustomer(c);
+            subscription.setPlanPrice(planPrice("duplicate-test", PlanType.BASIC));
+            subscriptions.create(subscription);
+        });
+        Subscription existing = subscriptions.findByIdAndTenantId(subscriptionId, "duplicate-test").orElseThrow();
+        existing.setStatus(Subscription.Status.CANCELED);
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> subscriptions.create(existing));
+        assertEquals(Subscription.Status.IN_TRIAL, subscriptions.findByIdAndTenantId(existing.getKey().getId(), "duplicate-test").orElseThrow().getStatus());
     }
 
     @Test void lifecyclePersistsWithoutChangingIdentity() {
         UUID customerId = UUID.randomUUID();
         transaction(() -> {
-            em.persist(customer(customerId, "alpha"));
+            em.persist(customerMapper.toEntity(customer(customerId, "alpha")));
             planPrice("alpha", PlanType.BASIC);
             planPrice("alpha", PlanType.PRO);
         });
         Subscription created = service.subscribe(customerId, "BASIC", Period.MONTHLY);
         UUID id = created.getKey().getId();
+        // Returned domain graphs must remain usable after the transaction closes.
+        assertEquals(PlanType.BASIC, created.getPlanPrice().getPlan().getPlanType());
+        assertEquals(customerId, created.getCustomer().getKey().getId());
+        Subscription detached = subscriptions.findByIdAndTenantId(id, "alpha").orElseThrow();
+        assertEquals(PlanType.BASIC, detached.getPlanPrice().getPlan().getPlanType());
+        assertEquals(customerId, detached.getCustomer().getKey().getId());
         assertNotNull(id);
         assertNotEquals(customerId, id);
         Subscription second = service.subscribe(customerId, "BASIC", Period.MONTHLY);
@@ -91,7 +128,7 @@ class SubscriptionPersistenceIT {
             assertEquals(new SubscriptionKey(id, "alpha"), changed.getKey());
             assertEquals(PlanType.PRO, changed.getPlanPrice().getPlan().getPlanType());
             assertEquals(PlanType.BASIC, subscriptions.findByIdAndTenantId(second.getKey().getId(), "alpha").orElseThrow().getPlanPrice().getPlan().getPlanType());
-            assertEquals(2L, em.createQuery("select count(s) from Subscription s", Long.class).getSingleResult());
+            assertEquals(2L, em.createQuery("select count(s) from SubscriptionJpaEntity s", Long.class).getSingleResult());
         });
         service.cancel(id);
         transaction(() -> {
@@ -104,11 +141,11 @@ class SubscriptionPersistenceIT {
         transaction(() -> {
             Customer c = customer(UUID.randomUUID(), "beta");
             PlanPrice p = planPrice("beta", PlanType.BASIC);
-            em.persist(c);
+            em.persist(customerMapper.toEntity(c));
             Subscription other = new Subscription();
             other.setKey(new SubscriptionKey(id, "beta"));
             other.setCustomer(c); other.setPlanPrice(p);
-            subscriptions.save(other);
+            subscriptions.create(other);
         });
         transaction(() -> {
             assertEquals("beta", subscriptions.findByIdAndTenantId(id, "beta").orElseThrow().getCustomer().getKey().getTenantId());

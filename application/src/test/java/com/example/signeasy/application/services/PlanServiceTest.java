@@ -38,7 +38,7 @@ class PlanServiceTest {
         input.setPlanType(PlanType.BASIC);
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.BASIC.name(), tenantId)).thenReturn(Optional.empty());
-        when(planRepositoryPort.save(input)).thenAnswer(invocation -> {
+        when(planRepositoryPort.create(input)).thenAnswer(invocation -> {
             Plan saved = invocation.getArgument(0);
             assertNotNull(saved.getKey().getId());
             assertEquals(4, saved.getKey().getId().version());
@@ -47,7 +47,7 @@ class PlanServiceTest {
         });
 
         assertSame(input, planService.create(input));
-        verify(planRepositoryPort).save(input);
+        verify(planRepositoryPort).create(input);
     }
 
     @Test
@@ -57,7 +57,7 @@ class PlanServiceTest {
         input.setKey(new PlanKey(null, "other-tenant"));
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.BASIC.name(), tenantId)).thenReturn(Optional.empty());
-        when(planRepositoryPort.save(input)).thenAnswer(invocation -> {
+        when(planRepositoryPort.create(input)).thenAnswer(invocation -> {
             Plan saved = invocation.getArgument(0);
             assertNotNull(saved.getKey().getId());
             assertEquals(4, saved.getKey().getId().version());
@@ -66,7 +66,7 @@ class PlanServiceTest {
         });
 
         assertSame(input, planService.create(input));
-        verify(planRepositoryPort).save(input);
+        verify(planRepositoryPort).create(input);
     }
 
     @Test
@@ -77,7 +77,7 @@ class PlanServiceTest {
         input.setKey(new PlanKey(existingId, "other-tenant"));
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.BASIC.name(), tenantId)).thenReturn(Optional.empty());
-        when(planRepositoryPort.save(input)).thenAnswer(invocation -> {
+        when(planRepositoryPort.create(input)).thenAnswer(invocation -> {
             Plan saved = invocation.getArgument(0);
             assertNotNull(saved.getKey().getId());
             assertEquals(existingId, saved.getKey().getId());
@@ -86,7 +86,7 @@ class PlanServiceTest {
         });
 
         assertSame(input, planService.create(input));
-        verify(planRepositoryPort).save(input);
+        verify(planRepositoryPort).create(input);
     }
 
     @Test
@@ -98,14 +98,14 @@ class PlanServiceTest {
 
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.BASIC.name(), tenantId)).thenReturn(Optional.empty());
-        when(planRepositoryPort.save(plan)).thenReturn(plan);
+        when(planRepositoryPort.create(plan)).thenReturn(plan);
 
         Plan saved = planService.create(plan);
 
         assertSame(plan, saved);
         assertNotNull(plan.getKey());
         assertEquals(tenantId, plan.getKey().getTenantId());
-        verify(planRepositoryPort).save(plan);
+        verify(planRepositoryPort).create(plan);
     }
 
     @Test
@@ -119,7 +119,7 @@ class PlanServiceTest {
                 .thenReturn(Optional.of(plan));
 
         assertThrows(BusinessException.class, () -> planService.create(plan));
-        verify(planRepositoryPort, never()).save(any());
+        verify(planRepositoryPort, never()).create(any());
     }
 
     @Test

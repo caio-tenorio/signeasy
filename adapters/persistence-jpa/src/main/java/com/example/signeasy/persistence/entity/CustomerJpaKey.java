@@ -1,18 +1,24 @@
-package com.example.signeasy.domain.model.plan;
+package com.example.signeasy.persistence.entity;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.UUID;
 import java.util.Objects;
 
-public class PlanKey implements Serializable {
+@Embeddable
+public class CustomerJpaKey implements Serializable {
 
+    @Column(nullable = false, updatable = false)
     private UUID id;
 
+    @Column(name = "tenant_id", nullable = false, updatable = false, length = 30)
     private String tenantId;
 
-    public PlanKey() {}
+    public CustomerJpaKey() {
+    }
 
-    public PlanKey(UUID id, String tenantId) {
+    public CustomerJpaKey(UUID id, String tenantId) {
         this.id = id;
         this.tenantId = tenantId;
     }
@@ -36,7 +42,7 @@ public class PlanKey implements Serializable {
     @Override
     public boolean equals(Object other) {
         if (this == other) return true;
-        if (!(other instanceof PlanKey that)) return false;
+        if (!(other instanceof CustomerJpaKey that)) return false;
         return Objects.equals(id, that.id) && Objects.equals(tenantId, that.tenantId);
     }
 

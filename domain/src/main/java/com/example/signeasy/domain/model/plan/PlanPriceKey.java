@@ -1,17 +1,13 @@
 package com.example.signeasy.domain.model.plan;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.UUID;
 import java.util.Objects;
 
-@Embeddable
 public class PlanPriceKey implements Serializable {
-    @Column(nullable = false, updatable = false)
+
     private UUID id;
 
-    @Column(name = "tenant_id", nullable = false, updatable = false, length = 30)
     private String tenantId;
 
     public PlanPriceKey() {}

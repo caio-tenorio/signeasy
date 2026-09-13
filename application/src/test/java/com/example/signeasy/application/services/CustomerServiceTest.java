@@ -38,7 +38,7 @@ class CustomerServiceTest {
         input.setEmail("new@example.com");
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(customerRepositoryPort.findByEmailAndTenantId("new@example.com", tenantId)).thenReturn(Optional.empty());
-        when(customerRepositoryPort.save(input)).thenAnswer(invocation -> {
+        when(customerRepositoryPort.create(input)).thenAnswer(invocation -> {
             Customer saved = invocation.getArgument(0);
             assertNotNull(saved.getKey().getId());
             assertEquals(4, saved.getKey().getId().version());
@@ -47,7 +47,7 @@ class CustomerServiceTest {
         });
 
         assertSame(input, customerService.create(input));
-        verify(customerRepositoryPort).save(input);
+        verify(customerRepositoryPort).create(input);
     }
 
     @Test
@@ -57,7 +57,7 @@ class CustomerServiceTest {
         input.setKey(new CustomerKey(null, "other-tenant"));
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(customerRepositoryPort.findByEmailAndTenantId("new@example.com", tenantId)).thenReturn(Optional.empty());
-        when(customerRepositoryPort.save(input)).thenAnswer(invocation -> {
+        when(customerRepositoryPort.create(input)).thenAnswer(invocation -> {
             Customer saved = invocation.getArgument(0);
             assertNotNull(saved.getKey().getId());
             assertEquals(4, saved.getKey().getId().version());
@@ -66,7 +66,7 @@ class CustomerServiceTest {
         });
 
         assertSame(input, customerService.create(input));
-        verify(customerRepositoryPort).save(input);
+        verify(customerRepositoryPort).create(input);
     }
 
     @Test
@@ -77,7 +77,7 @@ class CustomerServiceTest {
         input.setKey(new CustomerKey(existingId, "other-tenant"));
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(customerRepositoryPort.findByEmailAndTenantId("new@example.com", tenantId)).thenReturn(Optional.empty());
-        when(customerRepositoryPort.save(input)).thenAnswer(invocation -> {
+        when(customerRepositoryPort.create(input)).thenAnswer(invocation -> {
             Customer saved = invocation.getArgument(0);
             assertNotNull(saved.getKey().getId());
             assertEquals(existingId, saved.getKey().getId());
@@ -86,7 +86,7 @@ class CustomerServiceTest {
         });
 
         assertSame(input, customerService.create(input));
-        verify(customerRepositoryPort).save(input);
+        verify(customerRepositoryPort).create(input);
     }
 
     @Test
@@ -99,7 +99,7 @@ class CustomerServiceTest {
                 .thenReturn(Optional.of(existing));
 
         assertThrows(BusinessException.class, () -> customerService.create(input));
-        verify(customerRepositoryPort, never()).save(any());
+        verify(customerRepositoryPort, never()).create(any());
     }
 
     @Test
@@ -108,12 +108,12 @@ class CustomerServiceTest {
         when(tenantContext.currentTenantId()).thenReturn(tenantId);
         when(customerRepositoryPort.findByEmailAndTenantId("jane@example.com", tenantId))
                 .thenReturn(Optional.empty());
-        when(customerRepositoryPort.save(input)).thenReturn(input);
+        when(customerRepositoryPort.create(input)).thenReturn(input);
 
         Customer saved = customerService.create(input);
 
         assertSame(input, saved);
-        verify(customerRepositoryPort).save(input);
+        verify(customerRepositoryPort).create(input);
     }
 
     @Test
@@ -145,7 +145,7 @@ class CustomerServiceTest {
         customerService.provisionIfNotExists(userId.toString(), tenantId, "user@example.com", "User");
 
         ArgumentCaptor<Customer> captor = ArgumentCaptor.forClass(Customer.class);
-        verify(customerRepositoryPort).save(captor.capture());
+        verify(customerRepositoryPort).create(captor.capture());
         Customer saved = captor.getValue();
 
         assertEquals(userId, saved.getKey().getId());
@@ -163,7 +163,7 @@ class CustomerServiceTest {
 
         customerService.provisionIfNotExists(userId.toString(), tenantId, "existing@example.com", "Existing");
 
-        verify(customerRepositoryPort, never()).save(any());
+        verify(customerRepositoryPort, never()).create(any());
     }
 
     private Customer buildCustomer(UUID id, String email) {

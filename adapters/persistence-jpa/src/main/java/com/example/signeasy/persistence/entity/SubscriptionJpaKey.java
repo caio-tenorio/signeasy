@@ -1,18 +1,22 @@
-package com.example.signeasy.domain.model;
+package com.example.signeasy.persistence.entity;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
-public class SubscriptionKey implements Serializable {
-
+@Embeddable
+public class SubscriptionJpaKey implements Serializable {
+    @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
+    @Column(name = "tenant_id", nullable = false, updatable = false, length = 30)
     private String tenantId;
 
-    public SubscriptionKey() {}
+    public SubscriptionJpaKey() {}
 
-    public SubscriptionKey(UUID id, String tenantId) {
+    public SubscriptionJpaKey(UUID id, String tenantId) {
         this.id = id;
         this.tenantId = tenantId;
     }
@@ -25,7 +29,7 @@ public class SubscriptionKey implements Serializable {
     @Override
     public boolean equals(Object other) {
         if (this == other) return true;
-        if (!(other instanceof SubscriptionKey that)) return false;
+        if (!(other instanceof SubscriptionJpaKey that)) return false;
         return Objects.equals(id, that.id) && Objects.equals(tenantId, that.tenantId);
     }
 
