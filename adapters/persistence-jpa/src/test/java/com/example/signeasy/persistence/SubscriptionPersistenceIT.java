@@ -72,6 +72,32 @@ class SubscriptionPersistenceIT {
         return price;
     }
 
+    @Test void updateRejectsMissingSubscription() {
+        Subscription missing = new Subscription();
+        missing.setKey(new SubscriptionKey(UUID.randomUUID(), "alpha"));
+        BusinessException error = assertThrows(BusinessException.class, () -> subscriptions.update(missing));
+        assertEquals("Subscription not found", error.getMessage());
+        assertTrue(subscriptions.findByIdAndTenantId(missing.getKey().getId(), "alpha").isEmpty());
+    }
+
+    @Test void createRejectsExistingKeyWithoutUpdatingIt() {
+        UUID customerId = UUID.randomUUID();
+        UUID subscriptionId = UUID.randomUUID();
+        transaction(() -> {
+            Customer c = customer(customerId, "duplicate-test");
+            em.persist(customerMapper.toEntity(c));
+            Subscription subscription = new Subscription();
+            subscription.setKey(new SubscriptionKey(subscriptionId, "duplicate-test"));
+            subscription.setCustomer(c);
+            subscription.setPlanPrice(planPrice("duplicate-test", PlanType.BASIC));
+            subscriptions.create(subscription);
+        });
+        Subscription existing = subscriptions.findByIdAndTenantId(subscriptionId, "duplicate-test").orElseThrow();
+        existing.setStatus(Subscription.Status.CANCELED);
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> subscriptions.create(existing));
+        assertEquals(Subscription.Status.IN_TRIAL, subscriptions.findByIdAndTenantId(existing.getKey().getId(), "duplicate-test").orElseThrow().getStatus());
+    }
+
     @Test void lifecyclePersistsWithoutChangingIdentity() {
         UUID customerId = UUID.randomUUID();
         transaction(() -> {
@@ -119,7 +145,7 @@ class SubscriptionPersistenceIT {
             Subscription other = new Subscription();
             other.setKey(new SubscriptionKey(id, "beta"));
             other.setCustomer(c); other.setPlanPrice(p);
-            subscriptions.save(other);
+            subscriptions.create(other);
         });
         transaction(() -> {
             assertEquals("beta", subscriptions.findByIdAndTenantId(id, "beta").orElseThrow().getCustomer().getKey().getTenantId());

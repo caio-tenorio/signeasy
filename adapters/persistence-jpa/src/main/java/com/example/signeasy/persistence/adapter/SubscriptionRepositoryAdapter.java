@@ -2,6 +2,9 @@ package com.example.signeasy.persistence.adapter;
 
 import com.example.signeasy.application.ports.SubscriptionRepositoryPort;
 import com.example.signeasy.domain.model.Subscription;
+import com.example.signeasy.domain.common.BusinessException;
+import com.example.signeasy.persistence.entity.SubscriptionJpaEntity;
+import jakarta.persistence.EntityManager;
 import com.example.signeasy.persistence.jpa.SubscriptionJpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,20 +17,30 @@ import java.util.*;
 public class SubscriptionRepositoryAdapter implements SubscriptionRepositoryPort {
     private final SubscriptionJpaRepository repo;
     private final SubscriptionJpaMapper mapper;
+    private final EntityManager em;
 
-    public SubscriptionRepositoryAdapter(SubscriptionJpaRepository repo, SubscriptionJpaMapper mapper) {
+    public SubscriptionRepositoryAdapter(SubscriptionJpaRepository repo, SubscriptionJpaMapper mapper, EntityManager em) {
         this.repo = repo;
         this.mapper = mapper;
+        this.em = em;
     }
 
-    public Subscription save(Subscription s) {
-        var entity = repo.findById(mapper.toKey(s.getKey())).orElse(null);
+    @Override
+    public Subscription create(Subscription subscription) {
+        var entity = mapper.toEntity(subscription);
+        em.persist(entity);
+        return mapper.toDomain(entity);
+    }
+
+    @Override
+    public Subscription update(Subscription subscription) {
+        // Reuses the managed entity when the service already loaded it in this transaction.
+        var entity = em.find(SubscriptionJpaEntity.class, mapper.toKey(subscription.getKey()));
         if (entity == null) {
-            entity = mapper.toEntity(s);
-        } else {
-            mapper.updateEntity(s, entity);
+            throw new BusinessException("Subscription not found");
         }
-        return mapper.toDomain(repo.saveAndFlush(entity));
+        mapper.updateEntity(subscription, entity);
+        return mapper.toDomain(entity);
     }
 
     @Override

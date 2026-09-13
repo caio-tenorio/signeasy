@@ -147,7 +147,7 @@ class CreationPersistenceIT {
 
         Customer detached = customerRepository.findByIdAndTenantId(key.getId(), TENANT).orElseThrow();
         detached.setName("Updated name");
-        customerRepository.save(detached);
+        customerRepository.update(detached);
 
         tx.executeWithoutResult(status -> {
             CustomerJpaEntity entity = em.find(CustomerJpaEntity.class, key);
@@ -160,10 +160,10 @@ class CreationPersistenceIT {
     @Test
     void priceRoundTripUsesExistingPlanWithoutCascadingDomainChanges() {
         String tenant = "price-mapping";
-        Plan plan = planRepository.save(new Plan(new PlanKey(UUID.randomUUID(), tenant),
+        Plan plan = planRepository.create(new Plan(new PlanKey(UUID.randomUUID(), tenant),
                 PlanType.PRO, "Original plan", 14, true));
         plan.setName("Local change that must not be persisted through a price");
-        PlanPrice saved = priceRepository.save(new PlanPrice(new PlanPriceKey(UUID.randomUUID(), tenant),
+        PlanPrice saved = priceRepository.create(new PlanPrice(new PlanPriceKey(UUID.randomUUID(), tenant),
                 plan, Period.MONTHLY, 2500, true));
         assertEquals("Original plan", saved.getPlan().getName());
         assertEquals(plan.getKey(), saved.getPlan().getKey());
@@ -172,7 +172,7 @@ class CreationPersistenceIT {
                 .orElseThrow();
         assertEquals(14, reloaded.getPlan().getTrialDays());
         reloaded.setPriceCents(3000);
-        priceRepository.save(reloaded);
+        priceRepository.update(reloaded);
         var prices = priceRepository.listActivePricesByTenantId(tenant);
         assertEquals(1, prices.size());
         assertEquals(saved.getKey(), prices.getFirst().getKey());
@@ -180,6 +180,48 @@ class CreationPersistenceIT {
         assertEquals("Original plan", prices.getFirst().getPlan().getName());
         assertTrue(priceRepository.listActivePricesByTenantId("missing-tenant").isEmpty());
         assertEquals("Original plan", planRepository.listActivePlansByTenantId(tenant).getFirst().getName());
+    }
+
+    @Test
+    void updateRejectsMissingKeys() {
+        Customer customer = new Customer();
+        customer.setKey(new CustomerKey(UUID.randomUUID(), "missing"));
+        Plan plan = new Plan(new PlanKey(UUID.randomUUID(), "missing"), PlanType.BASIC, "Missing", 0, true);
+        PlanPrice price = new PlanPrice(new PlanPriceKey(UUID.randomUUID(), "missing"), plan, Period.MONTHLY, 1000, true);
+
+        assertThrows(com.example.signeasy.domain.common.BusinessException.class, () -> customerRepository.update(customer));
+        assertThrows(com.example.signeasy.domain.common.BusinessException.class, () -> planRepository.update(plan));
+        assertThrows(com.example.signeasy.domain.common.BusinessException.class, () -> priceRepository.update(price));
+        assertTrue(customerRepository.findByIdAndTenantId(customer.getKey().getId(), "missing").isEmpty());
+        assertTrue(planRepository.listActivePlansByTenantId("missing").isEmpty());
+        assertTrue(priceRepository.listActivePricesByTenantId("missing").isEmpty());
+    }
+
+    @Test
+    void duplicateCreatesFailAndPlanUpdatePreservesIdentity() {
+        String tenant = "explicit-create";
+        Customer customer = customer("duplicate@example.test");
+        customer.setKey(new CustomerKey(UUID.randomUUID(), tenant));
+        customerRepository.create(customer);
+        Plan plan = planRepository.create(new Plan(new PlanKey(UUID.randomUUID(), tenant), PlanType.BASIC, "Original", 0, true));
+        PlanPrice price = priceRepository.create(new PlanPrice(new PlanPriceKey(UUID.randomUUID(), tenant), plan, Period.MONTHLY, 1000, true));
+
+        customer.setName("Duplicate");
+        plan.setName("Duplicate");
+        price.setPriceCents(2000);
+        // Each adapter call owns its transaction, so these assertions include commit.
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> customerRepository.create(customer));
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> planRepository.create(plan));
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> priceRepository.create(price));
+        assertEquals("Test Customer", customerRepository.findByIdAndTenantId(customer.getKey().getId(), tenant).orElseThrow().getName());
+        assertEquals("Original", planRepository.findByPlanTypeAndTenantId("BASIC", tenant).orElseThrow().getName());
+        assertEquals(1000, priceRepository.findByPlanTypeAndPeriodAndTenantId("BASIC", Period.MONTHLY, tenant).orElseThrow().getPriceCents());
+
+        plan.setName("Updated");
+        planRepository.update(plan);
+        Plan reloaded = planRepository.findByPlanTypeAndTenantId("BASIC", tenant).orElseThrow();
+        assertEquals(plan.getKey(), reloaded.getKey());
+        assertEquals("Updated", reloaded.getName());
     }
 
     private Customer customer(String email) {

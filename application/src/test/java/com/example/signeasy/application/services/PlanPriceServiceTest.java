@@ -45,7 +45,7 @@ class PlanPriceServiceTest {
         when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.BASIC.name(), tenantId)).thenReturn(Optional.of(plan));
         when(planPriceRepositoryPort.findByPlanTypeAndPeriodAndTenantId(PlanType.BASIC.name(), Period.MONTHLY, tenantId))
                 .thenReturn(Optional.empty());
-        when(planPriceRepositoryPort.save(any(PlanPrice.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(planPriceRepositoryPort.create(any(PlanPrice.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         PlanPrice saved = planPriceService.create(PlanType.BASIC.name(), Period.MONTHLY, 9900);
 
@@ -54,7 +54,7 @@ class PlanPriceServiceTest {
         assertSame(plan, saved.getPlan());
         assertEquals(Period.MONTHLY, saved.getPeriod());
         assertEquals(9900, saved.getPriceCents());
-        verify(planPriceRepositoryPort).save(saved);
+        verify(planPriceRepositoryPort).create(saved);
     }
 
     @Test
@@ -63,7 +63,7 @@ class PlanPriceServiceTest {
         when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.PRO.name(), tenantId)).thenReturn(Optional.empty());
 
         assertThrows(BusinessException.class, () -> planPriceService.create(PlanType.PRO.name(), Period.YEARLY, 1000));
-        verify(planPriceRepositoryPort, never()).save(any());
+        verify(planPriceRepositoryPort, never()).create(any());
     }
 
     @Test
@@ -77,7 +77,7 @@ class PlanPriceServiceTest {
                 .thenReturn(Optional.of(existing));
 
         assertThrows(BusinessException.class, () -> planPriceService.create(PlanType.BASIC.name(), Period.MONTHLY, 9900));
-        verify(planPriceRepositoryPort, never()).save(any());
+        verify(planPriceRepositoryPort, never()).create(any());
     }
 
     @Test
@@ -88,12 +88,12 @@ class PlanPriceServiceTest {
         when(planRepositoryPort.findByPlanTypeAndTenantId(PlanType.BASIC.name(), tenantId)).thenReturn(Optional.of(plan));
         when(planPriceRepositoryPort.findByPlanTypeAndPeriodAndTenantId(PlanType.BASIC.name(), Period.YEARLY, tenantId))
                 .thenReturn(Optional.empty());
-        when(planPriceRepositoryPort.save(any(PlanPrice.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(planPriceRepositoryPort.create(any(PlanPrice.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         PlanPrice saved = planPriceService.create(PlanType.BASIC.name(), Period.YEARLY, 99000);
 
         assertEquals(Period.YEARLY, saved.getPeriod());
-        verify(planPriceRepositoryPort).save(saved);
+        verify(planPriceRepositoryPort).create(saved);
     }
 
     @Test

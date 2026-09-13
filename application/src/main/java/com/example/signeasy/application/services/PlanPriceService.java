@@ -41,7 +41,7 @@ public class PlanPriceService {
         price.setPlan(plan);
         price.setPeriod(period);
         price.setPriceCents(priceCents);
-        return planPriceRepositoryPort.save(price);
+        return planPriceRepositoryPort.create(price);
     }
 
     public List<PlanPrice> listActive() {

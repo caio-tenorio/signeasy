@@ -34,7 +34,7 @@ public class CustomerService {
         customerRepositoryPort.findByEmailAndTenantId(c.getEmail(), tenantId).ifPresent(x -> {
             throw new BusinessException("A Customer with the same email already exists");
         });
-        return customerRepositoryPort.save(c);
+        return customerRepositoryPort.create(c);
     }
 
     public Customer findByEmail(String email) {
@@ -50,7 +50,7 @@ public class CustomerService {
             customer.setEmail(email);
             customer.setName(name);
             customer.setStatus(Status.ACTIVE);
-            customerRepositoryPort.save(customer);
+            customerRepositoryPort.create(customer);
         }
     }
 

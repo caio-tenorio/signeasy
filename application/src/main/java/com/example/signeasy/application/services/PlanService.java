@@ -29,7 +29,7 @@ public class PlanService {
         planRepositoryPort.findByPlanTypeAndTenantId(plan.getPlanType().toString(), plan.getKey().getTenantId()).ifPresent(x -> {
             throw new BusinessException("Plan code already exists");
         });
-        return planRepositoryPort.save(plan);
+        return planRepositoryPort.create(plan);
     }
 
     public List<Plan> listActive() {
