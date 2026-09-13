@@ -1,7 +1,7 @@
 package com.example.signeasy.web.controller;
 
 import com.example.signeasy.application.services.SubscriptionService;
-import com.example.signeasy.domain.model.Subscription;
+import com.example.signeasy.web.mapper.ApiMapper;
 import com.example.signeasy.web.dto.SubscriptionDtos.*;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -18,17 +18,17 @@ public class SubscriptionController {
     }
 
     @PostMapping
-    public Subscription subscribe(@RequestBody @Valid SubscribeRequest req) {
-        return subscriptionService.subscribe(req.customerId(), req.planType(), req.period());
+    public SubscriptionResponse subscribe(@RequestBody @Valid SubscribeRequest req) {
+        return ApiMapper.toResponse(subscriptionService.subscribe(req.customerId(), req.planType(), ApiMapper.toDomain(req.period())));
     }
 
     @PostMapping("/{id}/change-plan")
-    public Subscription changePlan(@PathVariable("id") UUID id, @RequestBody @Valid ChangePlanRequest req) {
-        return subscriptionService.changePlan(id, req.newPlanType(), req.newPeriod());
+    public SubscriptionResponse changePlan(@PathVariable("id") UUID id, @RequestBody @Valid ChangePlanRequest req) {
+        return ApiMapper.toResponse(subscriptionService.changePlan(id, req.newPlanType(), ApiMapper.toDomain(req.newPeriod())));
     }
 
     @PostMapping("/{id}/cancel")
-    public Subscription cancel(@PathVariable("id") UUID id) {
-        return subscriptionService.cancel(id);
+    public SubscriptionResponse cancel(@PathVariable("id") UUID id) {
+        return ApiMapper.toResponse(subscriptionService.cancel(id));
     }
 }
