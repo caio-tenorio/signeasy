@@ -3,6 +3,8 @@ package com.example.signeasy.web.controller;
 import com.example.signeasy.application.services.CustomerService;
 import com.example.signeasy.domain.model.customer.Customer;
 import com.example.signeasy.web.dto.CustomerDtos;
+import com.example.signeasy.web.dto.CustomerDtos.CustomerResponse;
+import com.example.signeasy.web.mapper.ApiMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -20,15 +22,15 @@ public class CustomerController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
-    public Customer create(@RequestBody @Validated CustomerDtos.CreateCustomerRequest req) {
+    public CustomerResponse create(@RequestBody @Validated CustomerDtos.CreateCustomerRequest req) {
         var c = new Customer();
         c.setName(req.name());
         c.setEmail(req.email());
-        return customerService.create(c);
+        return ApiMapper.toResponse(customerService.create(c));
     }
 
     @GetMapping
-    public Customer findByEmail(@RequestParam("email") String email) {
-        return customerService.findByEmail(email);
+    public CustomerResponse findByEmail(@RequestParam("email") String email) {
+        return ApiMapper.toResponse(customerService.findByEmail(email));
     }
 }
