@@ -3,7 +3,9 @@ package com.example.signeasy.web.controller;
 import com.example.signeasy.application.services.PlanPriceService;
 import com.example.signeasy.application.services.PlanService;
 import com.example.signeasy.domain.model.plan.Plan;
-import com.example.signeasy.domain.model.plan.PlanPrice;
+import com.example.signeasy.web.dto.PlanDtos.PlanResponse;
+import com.example.signeasy.web.dto.PlanDtos.PlanPriceResponse;
+import com.example.signeasy.web.mapper.ApiMapper;
 import com.example.signeasy.web.dto.PlanDtos.CreatePlanPriceRequest;
 import com.example.signeasy.web.dto.PlanDtos.CreatePlanRequest;
 import org.springframework.http.HttpStatus;
@@ -27,28 +29,28 @@ public class PlanController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
-    public Plan create(@RequestBody @Validated CreatePlanRequest req) {
+    public PlanResponse create(@RequestBody @Validated CreatePlanRequest req) {
         var p = new Plan();
-        p.setPlanType(req.planType());
+        p.setPlanType(ApiMapper.toDomain(req.planType()));
         p.setName(req.name());
         p.setTrialDays(req.trialDays());
-        return plans.create(p);
+        return ApiMapper.toResponse(plans.create(p));
     }
 
     @GetMapping
-    public List<Plan> list() {
-        return plans.listActive();
+    public List<PlanResponse> list() {
+        return plans.listActive().stream().map(ApiMapper::toResponse).toList();
     }
 
     @PostMapping("/prices")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
-    public PlanPrice createPrice(@RequestBody @Validated CreatePlanPriceRequest req) {
-        return prices.create(req.planType().name(), req.period(), req.priceCents());
+    public PlanPriceResponse createPrice(@RequestBody @Validated CreatePlanPriceRequest req) {
+        return ApiMapper.toResponse(prices.create(req.planType().name(), ApiMapper.toDomain(req.period()), req.priceCents()));
     }
 
     @GetMapping("/prices")
-    public List<PlanPrice> listPrices() {
-        return prices.listActive();
+    public List<PlanPriceResponse> listPrices() {
+        return prices.listActive().stream().map(ApiMapper::toResponse).toList();
     }
 }
