@@ -1,6 +1,6 @@
 package com.example.signeasy.web.controller;
 
-import com.example.signeasy.application.services.SubscriptionService;
+import com.example.signeasy.application.ports.inbound.SubscriptionInboundPort;
 import com.example.signeasy.web.mapper.ApiMapper;
 import com.example.signeasy.web.dto.SubscriptionDtos.*;
 import jakarta.validation.Valid;
@@ -11,9 +11,9 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/subscriptions")
 public class SubscriptionController {
-    private final SubscriptionService subscriptionService;
+    private final SubscriptionInboundPort subscriptionService;
 
-    public SubscriptionController(SubscriptionService subscriptionService) {
+    public SubscriptionController(SubscriptionInboundPort subscriptionService) {
         this.subscriptionService = subscriptionService;
     }
 

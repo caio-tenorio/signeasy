@@ -1,11 +1,11 @@
-package com.example.signeasy.application.ports;
+package com.example.signeasy.application.ports.outbound;
 
 import com.example.signeasy.domain.model.customer.Customer;
 
 import java.util.Optional;
 import java.util.UUID;
 
-public interface CustomerRepositoryPort {
+public interface CustomerRepositoryOutboundPort {
     /** Inserts a new entity; an existing key must fail. */
     Customer create(Customer customer);
 

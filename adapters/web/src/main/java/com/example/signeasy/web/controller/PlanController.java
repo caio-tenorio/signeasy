@@ -1,7 +1,7 @@
 package com.example.signeasy.web.controller;
 
-import com.example.signeasy.application.services.PlanPriceService;
-import com.example.signeasy.application.services.PlanService;
+import com.example.signeasy.application.ports.inbound.PlanInboundPort;
+import com.example.signeasy.application.ports.inbound.PlanPriceInboundPort;
 import com.example.signeasy.domain.model.plan.Plan;
 import com.example.signeasy.web.dto.PlanDtos.PlanResponse;
 import com.example.signeasy.web.dto.PlanDtos.PlanPriceResponse;
@@ -18,10 +18,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/plans")
 public class PlanController {
-    private final PlanService plans;
-    private final PlanPriceService prices;
+    private final PlanInboundPort plans;
+    private final PlanPriceInboundPort prices;
 
-    public PlanController(PlanService plans, PlanPriceService prices) {
+    public PlanController(PlanInboundPort plans, PlanPriceInboundPort prices) {
         this.plans = plans;
         this.prices = prices;
     }

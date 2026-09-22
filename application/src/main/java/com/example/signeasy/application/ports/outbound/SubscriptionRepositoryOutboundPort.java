@@ -1,11 +1,11 @@
-package com.example.signeasy.application.ports;
+package com.example.signeasy.application.ports.outbound;
 
 import com.example.signeasy.domain.model.Subscription;
 
 import java.util.Optional;
 import java.util.UUID;
 
-public interface SubscriptionRepositoryPort {
+public interface SubscriptionRepositoryOutboundPort {
     /** Inserts a new subscription; an existing key must fail. */
     Subscription create(Subscription subscription);
 

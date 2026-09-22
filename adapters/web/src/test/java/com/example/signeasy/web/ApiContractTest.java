@@ -1,6 +1,6 @@
 package com.example.signeasy.web;
 
-import com.example.signeasy.application.services.SubscriptionService;
+import com.example.signeasy.application.ports.inbound.SubscriptionInboundPort;
 import com.example.signeasy.domain.common.Period;
 import com.example.signeasy.domain.common.PlanType;
 import com.example.signeasy.domain.model.Subscription;
@@ -35,7 +35,7 @@ class ApiContractTest {
         var customer = new Customer(new CustomerKey(id, "tenant"), "Customer", "c@example.test", Customer.Status.ACTIVE);
         var subscription = new Subscription(new SubscriptionKey(id, "tenant"), customer, price,
                 Subscription.Status.ACTIVE, LocalDate.of(2026, 1, 1), null, LocalDate.of(2026, 2, 1), null);
-        var service = mock(SubscriptionService.class);
+        var service = mock(SubscriptionInboundPort.class);
         when(service.subscribe(id, "BASIC", Period.MONTHLY)).thenReturn(subscription);
         var mvc = MockMvcBuilders.standaloneSetup(new SubscriptionController(service))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(json)).build();

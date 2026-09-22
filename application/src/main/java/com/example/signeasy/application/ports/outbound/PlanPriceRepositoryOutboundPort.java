@@ -1,4 +1,4 @@
-package com.example.signeasy.application.ports;
+package com.example.signeasy.application.ports.outbound;
 
 import com.example.signeasy.domain.common.Period;
 import com.example.signeasy.domain.model.plan.PlanPrice;
@@ -6,7 +6,7 @@ import com.example.signeasy.domain.model.plan.PlanPrice;
 import java.util.List;
 import java.util.Optional;
 
-public interface PlanPriceRepositoryPort {
+public interface PlanPriceRepositoryOutboundPort {
     /** Inserts a new entity; an existing key must fail. */
     PlanPrice create(PlanPrice price);
 

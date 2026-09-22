@@ -2,9 +2,9 @@ package com.example.signeasy.persistence;
 
 import com.example.signeasy.persistence.entity.*;
 
-import com.example.signeasy.application.ports.CustomerRepositoryPort;
-import com.example.signeasy.application.ports.PlanRepositoryPort;
-import com.example.signeasy.application.ports.PlanPriceRepositoryPort;
+import com.example.signeasy.application.ports.outbound.CustomerRepositoryOutboundPort;
+import com.example.signeasy.application.ports.outbound.PlanRepositoryOutboundPort;
+import com.example.signeasy.application.ports.outbound.PlanPriceRepositoryOutboundPort;
 import com.example.signeasy.application.services.CustomerService;
 import com.example.signeasy.application.services.PlanService;
 import com.example.signeasy.domain.common.PlanType;
@@ -60,21 +60,21 @@ class CreationPersistenceIT {
     @ComponentScan({"com.example.signeasy.persistence.adapter", "com.example.signeasy.persistence.mapper"})
     static class Config {
         @Bean
-        PlanService plans(PlanRepositoryPort repository) {
+        PlanService plans(PlanRepositoryOutboundPort repository) {
             return new PlanService(repository, () -> TENANT);
         }
 
         @Bean
-        CustomerService customers(CustomerRepositoryPort repository) {
+        CustomerService customers(CustomerRepositoryOutboundPort repository) {
             return new CustomerService(repository, () -> TENANT);
         }
     }
 
     @Autowired PlanService plans;
     @Autowired CustomerService customers;
-    @Autowired CustomerRepositoryPort customerRepository;
-    @Autowired PlanRepositoryPort planRepository;
-    @Autowired PlanPriceRepositoryPort priceRepository;
+    @Autowired CustomerRepositoryOutboundPort customerRepository;
+    @Autowired PlanRepositoryOutboundPort planRepository;
+    @Autowired PlanPriceRepositoryOutboundPort priceRepository;
     @Autowired EntityManager em;
     @Autowired PlatformTransactionManager transactionManager;
 

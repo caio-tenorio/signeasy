@@ -4,17 +4,17 @@ Multi-tenant SaaS subscription API built with Spring Boot 3.3 and Java 21. The p
 
 ## Layered architecture
 - `domain`: business models (`Customer`, `Plan`, `PlanPrice`, `Subscription`), domain types (`Period`, `PlanType`) and business exceptions, without JPA or Jackson dependencies.
-- `application`: transactional services enforcing rules (e.g., unique email checks, trial/next billing calculation) and defining ports (`CustomerRepositoryPort`, `TenantContext`, etc.).
-- `adapters/persistence-jpa`: JPA entities and composite keys, explicit domain mappers and transactional implementations of the ports, with Flyway migrations (`db/migration`) and PostgreSQL support.
-- `adapters/web`: REST API, logging filters, automatic user provisioning and OAuth2 Resource Server / JWT integration.
+- `application`: transactional services implementing inbound ports (`CustomerInboundPort`, `PlanInboundPort`, etc.) and defining outbound ports (`CustomerRepositoryOutboundPort`, `TenantContextOutboundPort`, etc.).
+- `adapters/persistence-jpa`: JPA entities and composite keys, explicit domain mappers and outbound adapter implementations of the repository ports (`CustomerRepositoryAdapter`, etc.), with Flyway migrations (`db/migration`) and PostgreSQL support.
+- `adapters/web`: Inbound HTTP adapters (REST controllers `CustomerController`, `PlanController`, etc.) invoking inbound ports, logging filters, automatic user provisioning, outbound tenant adapter (`RequestTenantContext`) and OAuth2 Resource Server / JWT integration.
 
 ```
 .
 ├── domain/                # Domain core
-├── application/           # Services and ports
+├── application/           # Services and ports (inbound & outbound)
 ├── adapters/
-│   ├── persistence-jpa/   # Database adapter (Spring Data + Flyway)
-│   └── web/               # HTTP API + security + documentation
+│   ├── persistence-jpa/   # Database outbound adapter (Spring Data + Flyway)
+│   └── web/               # HTTP inbound adapter + security + documentation
 ├── docker/                # Dockerfile, docker-compose and Keycloak realm
 └── pom.xml                # Maven multi-module build
 ```

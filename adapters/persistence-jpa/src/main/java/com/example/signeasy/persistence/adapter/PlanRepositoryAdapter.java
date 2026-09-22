@@ -1,6 +1,6 @@
 package com.example.signeasy.persistence.adapter;
 
-import com.example.signeasy.application.ports.PlanRepositoryPort;
+import com.example.signeasy.application.ports.outbound.PlanRepositoryOutboundPort;
 import com.example.signeasy.domain.common.PlanType;
 import com.example.signeasy.domain.model.plan.Plan;
 import com.example.signeasy.persistence.jpa.PlanJpaRepository;
@@ -15,7 +15,7 @@ import java.util.*;
 
 @Repository
 @Transactional
-public class PlanRepositoryAdapter implements PlanRepositoryPort {
+public class PlanRepositoryAdapter implements PlanRepositoryOutboundPort {
     private final PlanJpaRepository repo;
     private final PlanJpaMapper mapper;
     private final EntityManager em;

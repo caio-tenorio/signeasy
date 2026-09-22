@@ -3,7 +3,7 @@ package com.example.signeasy.persistence;
 import com.example.signeasy.persistence.entity.*;
 import com.example.signeasy.persistence.mapper.*;
 
-import com.example.signeasy.application.ports.*;
+import com.example.signeasy.application.ports.outbound.*;
 import com.example.signeasy.application.services.SubscriptionService;
 import com.example.signeasy.domain.common.*;
 import com.example.signeasy.domain.model.*;
@@ -45,12 +45,12 @@ class SubscriptionPersistenceIT {
     @EnableJpaRepositories("com.example.signeasy.persistence.jpa")
     @ComponentScan({"com.example.signeasy.persistence.adapter", "com.example.signeasy.persistence.mapper"})
     static class Config {
-        @Bean SubscriptionService subscriptions(CustomerRepositoryPort c, PlanPriceRepositoryPort p, SubscriptionRepositoryPort s) {
+        @Bean SubscriptionService subscriptions(CustomerRepositoryOutboundPort c, PlanPriceRepositoryOutboundPort p, SubscriptionRepositoryOutboundPort s) {
             return new SubscriptionService(c, p, s, () -> "alpha");
         }
     }
     @Autowired SubscriptionService service;
-    @Autowired SubscriptionRepositoryPort subscriptions;
+    @Autowired SubscriptionRepositoryOutboundPort subscriptions;
     @Autowired EntityManager em;
     @Autowired CustomerJpaMapper customerMapper;
     @Autowired PlanPriceJpaMapper priceMapper;

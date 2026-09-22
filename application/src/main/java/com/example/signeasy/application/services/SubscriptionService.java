@@ -1,9 +1,10 @@
 package com.example.signeasy.application.services;
 
-import com.example.signeasy.application.ports.CustomerRepositoryPort;
-import com.example.signeasy.application.ports.PlanPriceRepositoryPort;
-import com.example.signeasy.application.ports.SubscriptionRepositoryPort;
-import com.example.signeasy.application.ports.TenantContext;
+import com.example.signeasy.application.ports.inbound.SubscriptionInboundPort;
+import com.example.signeasy.application.ports.outbound.CustomerRepositoryOutboundPort;
+import com.example.signeasy.application.ports.outbound.PlanPriceRepositoryOutboundPort;
+import com.example.signeasy.application.ports.outbound.SubscriptionRepositoryOutboundPort;
+import com.example.signeasy.application.ports.outbound.TenantContextOutboundPort;
 import com.example.signeasy.domain.common.BusinessException;
 import com.example.signeasy.domain.common.Period;
 import com.example.signeasy.domain.model.plan.PlanPrice;
@@ -17,22 +18,23 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public class SubscriptionService {
-    private final CustomerRepositoryPort customerRepositoryPort;
-    private final PlanPriceRepositoryPort planPriceRepositoryPort;
-    private final SubscriptionRepositoryPort subscriptionRepositoryPort;
-    private final TenantContext tenantContext;
+public class SubscriptionService implements SubscriptionInboundPort {
+    private final CustomerRepositoryOutboundPort customerRepositoryPort;
+    private final PlanPriceRepositoryOutboundPort planPriceRepositoryPort;
+    private final SubscriptionRepositoryOutboundPort subscriptionRepositoryPort;
+    private final TenantContextOutboundPort tenantContext;
 
-    public SubscriptionService(CustomerRepositoryPort customerRepositoryPort,
-                               PlanPriceRepositoryPort planPriceRepositoryPort,
-                               SubscriptionRepositoryPort subscriptionRepositoryPort,
-                               TenantContext tenantContext) {
+    public SubscriptionService(CustomerRepositoryOutboundPort customerRepositoryPort,
+                               PlanPriceRepositoryOutboundPort planPriceRepositoryPort,
+                               SubscriptionRepositoryOutboundPort subscriptionRepositoryPort,
+                               TenantContextOutboundPort tenantContext) {
         this.customerRepositoryPort = customerRepositoryPort;
         this.planPriceRepositoryPort = planPriceRepositoryPort;
         this.subscriptionRepositoryPort = subscriptionRepositoryPort;
         this.tenantContext = tenantContext;
     }
 
+    @Override
     public Subscription subscribe(UUID customerId, String planType, Period period) {
         final String tenantId = tenantContext.currentTenantId();
 
@@ -58,6 +60,7 @@ public class SubscriptionService {
         return subscriptionRepositoryPort.create(subscription);
     }
 
+    @Override
     public Subscription changePlan(UUID subscriptionId, String planType, Period period) {
         final String tenantId = tenantContext.currentTenantId();
 
@@ -69,6 +72,7 @@ public class SubscriptionService {
         return subscriptionRepositoryPort.update(subscription);
     }
 
+    @Override
     public Subscription cancel(UUID subscriptionId) {
         var s = subscriptionRepositoryPort.findByIdAndTenantId(subscriptionId, tenantContext.currentTenantId()).orElseThrow(() -> new BusinessException("Subscription not found"));
         s.setStatus(Subscription.Status.CANCELED);

@@ -1,8 +1,8 @@
 package com.example.signeasy.application.services;
 
-import com.example.signeasy.application.ports.PlanPriceRepositoryPort;
-import com.example.signeasy.application.ports.PlanRepositoryPort;
-import com.example.signeasy.application.ports.TenantContext;
+import com.example.signeasy.application.ports.outbound.PlanPriceRepositoryOutboundPort;
+import com.example.signeasy.application.ports.outbound.PlanRepositoryOutboundPort;
+import com.example.signeasy.application.ports.outbound.TenantContextOutboundPort;
 import com.example.signeasy.domain.common.BusinessException;
 import com.example.signeasy.domain.common.Period;
 import com.example.signeasy.domain.common.PlanType;
@@ -26,11 +26,11 @@ import static org.mockito.Mockito.*;
 class PlanPriceServiceTest {
 
     @Mock
-    private PlanRepositoryPort planRepositoryPort;
+    private PlanRepositoryOutboundPort planRepositoryPort;
     @Mock
-    private PlanPriceRepositoryPort planPriceRepositoryPort;
+    private PlanPriceRepositoryOutboundPort planPriceRepositoryPort;
     @Mock
-    private TenantContext tenantContext;
+    private TenantContextOutboundPort tenantContext;
 
     @InjectMocks
     private PlanPriceService planPriceService;

@@ -1,6 +1,6 @@
 package com.example.signeasy.web.controller;
 
-import com.example.signeasy.application.services.CustomerService;
+import com.example.signeasy.application.ports.inbound.CustomerInboundPort;
 import com.example.signeasy.domain.model.customer.Customer;
 import com.example.signeasy.web.dto.CustomerDtos;
 import com.example.signeasy.web.dto.CustomerDtos.CustomerResponse;
@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerController {
-    private final CustomerService customerService;
+    private final CustomerInboundPort customerService;
 
-    public CustomerController(CustomerService customers) {
+    public CustomerController(CustomerInboundPort customers) {
         this.customerService = customers;
     }
 

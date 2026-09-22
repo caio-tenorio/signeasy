@@ -1,10 +1,10 @@
 package com.example.signeasy.web.security;
 
-import com.example.signeasy.application.ports.TenantContext;
+import com.example.signeasy.application.ports.outbound.TenantContextOutboundPort;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RequestTenantContext implements TenantContext {
+public class RequestTenantContext implements TenantContextOutboundPort {
     @Override
     public String currentTenantId() {
         String tenantId = TenantContextHolder.get();

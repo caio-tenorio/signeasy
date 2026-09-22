@@ -1,6 +1,6 @@
 package com.example.signeasy.web.security;
 
-import com.example.signeasy.application.services.CustomerService;
+import com.example.signeasy.application.ports.inbound.CustomerInboundPort;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,10 +14,10 @@ import java.io.IOException;
 
 @Component
 public class UserProvisioningFilter extends OncePerRequestFilter {
-    private final CustomerService customerService;
+    private final CustomerInboundPort customerService;
     private final TenantProvider tenantProvider;
 
-    public UserProvisioningFilter(CustomerService customerService, TenantProvider tenantProvider) {
+    public UserProvisioningFilter(CustomerInboundPort customerService, TenantProvider tenantProvider) {
         this.customerService = customerService;
         this.tenantProvider = tenantProvider;
     }

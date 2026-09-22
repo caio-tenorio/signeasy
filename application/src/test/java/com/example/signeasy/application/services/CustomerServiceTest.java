@@ -1,7 +1,7 @@
 package com.example.signeasy.application.services;
 
-import com.example.signeasy.application.ports.CustomerRepositoryPort;
-import com.example.signeasy.application.ports.TenantContext;
+import com.example.signeasy.application.ports.outbound.CustomerRepositoryOutboundPort;
+import com.example.signeasy.application.ports.outbound.TenantContextOutboundPort;
 import com.example.signeasy.domain.common.BusinessException;
 import com.example.signeasy.domain.model.customer.Customer;
 import com.example.signeasy.domain.model.customer.Customer.Status;
@@ -23,9 +23,9 @@ import static org.mockito.Mockito.*;
 class CustomerServiceTest {
 
     @Mock
-    private CustomerRepositoryPort customerRepositoryPort;
+    private CustomerRepositoryOutboundPort customerRepositoryPort;
     @Mock
-    private TenantContext tenantContext;
+    private TenantContextOutboundPort tenantContext;
 
     @InjectMocks
     private CustomerService customerService;

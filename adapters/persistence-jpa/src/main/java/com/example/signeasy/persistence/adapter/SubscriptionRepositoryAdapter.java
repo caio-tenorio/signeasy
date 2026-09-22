@@ -1,6 +1,6 @@
 package com.example.signeasy.persistence.adapter;
 
-import com.example.signeasy.application.ports.SubscriptionRepositoryPort;
+import com.example.signeasy.application.ports.outbound.SubscriptionRepositoryOutboundPort;
 import com.example.signeasy.domain.model.Subscription;
 import com.example.signeasy.domain.common.BusinessException;
 import com.example.signeasy.persistence.entity.SubscriptionJpaEntity;
@@ -14,7 +14,7 @@ import java.util.*;
 
 @Repository
 @Transactional
-public class SubscriptionRepositoryAdapter implements SubscriptionRepositoryPort {
+public class SubscriptionRepositoryAdapter implements SubscriptionRepositoryOutboundPort {
     private final SubscriptionJpaRepository repo;
     private final SubscriptionJpaMapper mapper;
     private final EntityManager em;

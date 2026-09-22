@@ -1,6 +1,6 @@
 package com.example.signeasy.persistence.adapter;
 
-import com.example.signeasy.application.ports.CustomerRepositoryPort;
+import com.example.signeasy.application.ports.outbound.CustomerRepositoryOutboundPort;
 import com.example.signeasy.domain.model.customer.Customer;
 import com.example.signeasy.persistence.jpa.CustomerJpaRepository;
 import com.example.signeasy.domain.common.BusinessException;
@@ -14,7 +14,7 @@ import java.util.*;
 
 @Repository
 @Transactional
-public class CustomerRepositoryAdapter implements CustomerRepositoryPort {
+public class CustomerRepositoryAdapter implements CustomerRepositoryOutboundPort {
     private final CustomerJpaRepository repo;
     private final CustomerJpaMapper mapper;
     private final EntityManager em;

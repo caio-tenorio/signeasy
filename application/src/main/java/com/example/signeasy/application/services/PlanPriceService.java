@@ -1,8 +1,9 @@
 package com.example.signeasy.application.services;
 
-import com.example.signeasy.application.ports.PlanPriceRepositoryPort;
-import com.example.signeasy.application.ports.PlanRepositoryPort;
-import com.example.signeasy.application.ports.TenantContext;
+import com.example.signeasy.application.ports.inbound.PlanPriceInboundPort;
+import com.example.signeasy.application.ports.outbound.PlanPriceRepositoryOutboundPort;
+import com.example.signeasy.application.ports.outbound.PlanRepositoryOutboundPort;
+import com.example.signeasy.application.ports.outbound.TenantContextOutboundPort;
 import com.example.signeasy.domain.common.BusinessException;
 import com.example.signeasy.domain.common.Period;
 import com.example.signeasy.domain.model.plan.PlanPrice;
@@ -15,17 +16,18 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public class PlanPriceService {
-    private final PlanRepositoryPort planRepositoryPort;
-    private final PlanPriceRepositoryPort planPriceRepositoryPort;
-    private final TenantContext tenantContext;
+public class PlanPriceService implements PlanPriceInboundPort {
+    private final PlanRepositoryOutboundPort planRepositoryPort;
+    private final PlanPriceRepositoryOutboundPort planPriceRepositoryPort;
+    private final TenantContextOutboundPort tenantContext;
 
-    public PlanPriceService(PlanRepositoryPort planRepositoryPort, PlanPriceRepositoryPort planPriceRepositoryPort, TenantContext tenantContext) {
+    public PlanPriceService(PlanRepositoryOutboundPort planRepositoryPort, PlanPriceRepositoryOutboundPort planPriceRepositoryPort, TenantContextOutboundPort tenantContext) {
         this.planRepositoryPort = planRepositoryPort;
         this.planPriceRepositoryPort = planPriceRepositoryPort;
         this.tenantContext = tenantContext;
     }
 
+    @Override
     public PlanPrice create(String planType, Period period, long priceCents) {
         final String tenantId = tenantContext.currentTenantId();
 
@@ -44,6 +46,7 @@ public class PlanPriceService {
         return planPriceRepositoryPort.create(price);
     }
 
+    @Override
     public List<PlanPrice> listActive() {
         return planPriceRepositoryPort.listActivePricesByTenantId(tenantContext.currentTenantId());
     }
